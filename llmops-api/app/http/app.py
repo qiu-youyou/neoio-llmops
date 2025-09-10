@@ -1,0 +1,26 @@
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+"""
+@File   :   app
+@Time   :   2025/9/1 13:59
+@Author :   s.qiu@foxmail.com
+"""
+import dotenv
+from injector import Injector
+
+from config import Config
+from internal.router import Router
+from internal.server import Http
+
+# 加载环境变量
+dotenv.load_dotenv()
+
+injector = Injector()
+
+# 加载配置
+conf = Config()
+
+app = Http(__name__, conf=conf, router=injector.get(Router))
+
+if __name__ == '__main__':
+    app.run(debug=True)

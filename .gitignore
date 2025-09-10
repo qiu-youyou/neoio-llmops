@@ -1,0 +1,25 @@
+# 系统文件
+.DS_Store
+.idea/
+.vscode/
+
+# 日志和环境
+*.log
+.env
+.venv
+.cache
+.npmrc
+.env.development
+
+# 构建产物
+dist/
+build/
+
+# python
+tmp/*
+venv/*
+storage/*
+__pycache__/
+*.pyc
+
+# 前端
