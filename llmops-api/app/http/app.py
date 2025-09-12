@@ -12,7 +12,7 @@ from config import Config
 from internal.router import Router
 from internal.server import Http
 
-# 加载环境变量
+# 加载ENV到环境变量
 dotenv.load_dotenv()
 
 injector = Injector()
