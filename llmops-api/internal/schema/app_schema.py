@@ -11,6 +11,13 @@ from wtforms import StringField
 from wtforms.validators import DataRequired, Length
 
 
+class TestReq(FlaskForm):
+    query = StringField('query', validators=[
+        DataRequired(message="query字段为必填"),
+        Length(max=20, message="query字段最大长度为10")
+    ])
+
+
 class CompletionReq(FlaskForm):
     """基础聊天接口请求验证"""
     # 必填、长度最大为2000

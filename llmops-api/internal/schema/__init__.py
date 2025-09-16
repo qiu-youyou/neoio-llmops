@@ -6,6 +6,6 @@
 @Author :   s.qiu@foxmail.com
 """
 
-from .app_schema import CompletionReq
+from .app_schema import TestReq, CompletionReq
 
-__all__ = ['CompletionReq']
+__all__ = ['TestReq', 'CompletionReq']
