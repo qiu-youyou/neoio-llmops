@@ -13,23 +13,25 @@ from config import Config
 from internal.exception import CustomException
 from internal.router import Router
 from pkg.response import json, Response, fail_message
+from pkg.sqlalchemy import SQLAlchemy
 
 
 class Http(Flask):
     """HTTP 服务引擎"""
 
-    def __init__(self, *args, conf: Config, router: Router, **kwargs):
+    def __init__(self, *args, conf: Config, router: Router, db: SQLAlchemy, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # 初始化应用配置
+        # 初始化配置
         self.config.from_object(conf)
 
-        # 异常错误处理自定义
+        # 自定义异常错误
         self.register_error_handler(Exception, self._register_error_handler)
 
         # 初始化扩展
+        db.init_app(self)
 
-        # 注册应用路由
+        # 注册路由
         router.register_router(self)
 
     def _register_error_handler(self, error: Exception):
