@@ -30,5 +30,11 @@ class Router:
 
         bp.add_url_rule(rule='/app/completion', view_func=self.app_handle.completion, methods=['POST'])
 
+        # app 增删改查
+        bp.add_url_rule(rule='/app', view_func=self.app_handle.create_app, methods=['POST'])
+        bp.add_url_rule(rule='/app/<uuid:id>', view_func=self.app_handle.get_app, )
+        bp.add_url_rule(rule='/app/<uuid:id>', view_func=self.app_handle.update_app, methods=['POST'])
+        bp.add_url_rule(rule='/app/<uuid:id>/delete', view_func=self.app_handle.delete_app, methods=['POST'])
+
         # 在应用上注册蓝图
         app.register_blueprint(bp)

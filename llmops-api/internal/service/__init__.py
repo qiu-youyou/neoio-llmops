@@ -2,9 +2,9 @@
 # -*- encoding: utf-8 -*-
 """
 @File   :   __init__.py
-@Time   :   2025/8/20 20:26
+@Time   :   2025/9/17 16:21
 @Author :   s.qiu@foxmail.com
 """
-from .app import App
+from .app_service import AppService
 
-__all__ = ['App']
+__all__ = ['AppService']
