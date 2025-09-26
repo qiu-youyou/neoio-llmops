@@ -1,6 +1,10 @@
+alembic==1.16.5
 Flask==3.1.2
+Flask_Migrate==4.1.0
+flask_sqlalchemy==3.1.1
 flask_wtf==1.2.2
 injector==0.22.0
-openai==1.107.1
+openai==1.109.1
+pytest==8.4.2
 python-dotenv==1.1.1
 WTForms==3.2.1
