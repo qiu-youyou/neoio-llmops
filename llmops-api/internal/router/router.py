@@ -28,7 +28,7 @@ class Router:
         # 将 URL 与对应的控制器方法绑定
         bp.add_url_rule(rule='/test', view_func=self.app_handle.test, methods=['POST'])
 
-        bp.add_url_rule(rule='/app/completion', view_func=self.app_handle.completion, methods=['POST'])
+        bp.add_url_rule(rule='/app/<uuid:app_id>/debug', view_func=self.app_handle.debug, methods=['POST'])
 
         # app 增删改查
         bp.add_url_rule(rule='/app', view_func=self.app_handle.create_app, methods=['POST'])

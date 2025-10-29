@@ -1,5 +1,6 @@
 # 系统文件
 .DS_Store
+.demo/
 .idea/
 .vscode/
 

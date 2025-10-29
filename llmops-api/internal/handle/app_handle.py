@@ -5,12 +5,13 @@
 @Time   :   2025/9/1 11:46
 @Author :   s.qiu@foxmail.com
 """
-import os
-import uuid
 from dataclasses import dataclass
+from uuid import UUID
 
 from injector import inject
-from openai import OpenAI
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
 
 from internal.schema import CompletionReq, TestReq
 from internal.service.app_service import AppService
@@ -23,7 +24,7 @@ class AppHandle:
     """应用控制器"""
     app_service: AppService
 
-    def get_app(self, id: uuid.UUID):
+    def get_app(self, id: UUID):
         """查询APP记录"""
         app = self.app_service.get_app(id)
         return success_message(f"查询成功，name 为 {app.name}")
@@ -33,38 +34,30 @@ class AppHandle:
         app = self.app_service.create_app()
         return success_message(f"应用创建成功, id 为 {app.id}")
 
-    def update_app(self, id: uuid.UUID):
+    def update_app(self, id: UUID):
         """更新APP记录"""
         app = self.app_service.update_app(id)
         return success_message(f"应用更新成功，修改后 name 为 {app.name}")
 
-    def delete_app(self, id: uuid.UUID):
+    def delete_app(self, id: UUID):
         """删除APP记录"""
         app = self.app_service.delete_app(id)
         return success_message(f"应用删除成功, id 为 {app.id}", )
 
-    def completion(self):
+    def debug(self, app_id: UUID):
         # 校验接口参数
         req = CompletionReq()
 
         if not req.validate():
             return validate_error_json(req.erros)
 
-        # 构建OPENAI 发送请求
-        client = OpenAI(base_url=os.getenv("OPENAI_API_BASE"))
+        prompt = ChatPromptTemplate.from_template('{query}')
+        llm = ChatOpenAI(model='kimi-k2-0905-preview')
 
-        completion = client.chat.completions.create(
-            model="kimi-k2-0905-preview",
-            messages=[
-                {"role": "system", "content": "你是OpenAI开发的聊天机器人，请根据用户的输入回复对应的信息"},
-                {"role": "user", "content": req.query.data},
-            ],
-            temperature=0.6,
-        )
-
-        # 返回响应
-        content = completion.choices[0].message.content
-
+        chain = prompt | llm | StrOutputParser()
+        
+        print(req.query)
+        content = chain.invoke(req.query.data)
         return success_json({"content": content})
 
     def test(self):
