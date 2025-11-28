@@ -2,10 +2,9 @@
 # -*- encoding: utf-8 -*-
 """
 @File   :   __init__.py
-@Time   :   2025/8/20 20:26
+@Time   :   2025/11/24 11:51
 @Author :   s.qiu@foxmail.com
 """
+from .google_serper import google_serper
 
-from .router import Router
-
-__all__ = ["Router"]
+__all__ = ["google_serper"]

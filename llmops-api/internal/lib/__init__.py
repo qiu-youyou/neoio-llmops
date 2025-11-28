@@ -2,10 +2,9 @@
 # -*- encoding: utf-8 -*-
 """
 @File   :   __init__.py
-@Time   :   2025/8/20 20:26
+@Time   :   2025/11/27 14:28
 @Author :   s.qiu@foxmail.com
 """
+from .helper import dynamic_import
 
-from .router import Router
-
-__all__ = ["Router"]
+__all__ = ["dynamic_import"]

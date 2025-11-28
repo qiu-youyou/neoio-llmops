@@ -2,10 +2,10 @@
 # -*- encoding: utf-8 -*-
 """
 @File   :   __init__.py
-@Time   :   2025/8/20 20:26
+@Time   :   2025/11/28 13:29
 @Author :   s.qiu@foxmail.com
 """
 
-from .router import Router
+from .current_time import current_time
 
-__all__ = ["Router"]
+__all__ = ['current_time']

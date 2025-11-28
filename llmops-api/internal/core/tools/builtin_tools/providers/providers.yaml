@@ -1,0 +1,27 @@
+- name: google
+  label: Google
+  description: 谷歌服务提供商，涵盖了谷歌搜索等工具。
+  icon: icon.svg
+  background: "#E5E7EB"
+  category: search
+  
+- name: time
+  label: Time
+  description: 一个用于获取当前时间的工具
+  icon: icon.svg
+  background: "#E5E7EB"
+  category: tool
+
+- name: duckduckgo
+  label: DockDockGo
+  description: 一个注重隐私的搜索引擎
+  icon: icon.svg
+  background: "#FFFFFF"
+  category: search
+
+- name: dalle
+  label: DALLE
+  description: DALLE是一个文生图工具
+  icon: icon.png
+  background: "#E5E7EB"
+  category: image
