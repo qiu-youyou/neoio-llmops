@@ -17,7 +17,7 @@ from .http_code import HttpCode
 class Response:
     """基础HTTP接口响应格式"""
     code: HttpCode = HttpCode.SUCCESS
-    message: str = ""
+    message: str = ''
     data: Any = field(default_factory=dict)
 
 

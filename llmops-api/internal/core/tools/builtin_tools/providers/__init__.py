@@ -6,6 +6,6 @@
 @Author :   s.qiu@foxmail.com
 """
 
-from .provider_factory import ProviderFactory
+from .builtin_provider_manager import BuiltinProviderManager
 
-__all__ = ["ProviderFactory"]
+__all__ = ["BuiltinProviderManager"]

@@ -6,6 +6,7 @@
 @Author :   s.qiu@foxmail.com
 """
 
+from langchain.tools import tool
 from langchain_community.tools import GoogleSerperRun
 from langchain_community.utilities import GoogleSerperAPIWrapper
 from langchain_core.tools import BaseTool
@@ -21,6 +22,7 @@ class GoogleSerperArgsSchema(BaseModel):
 
 
 # @add_attribute("args_schema", GoogleSerperArgsSchema)
+@tool()
 def google_serper(**kwargs) -> BaseTool:
     """谷歌Serp搜索"""
     return GoogleSerperRun(

@@ -18,7 +18,7 @@ from pkg.sqlalchemy import SQLAlchemy
 @inject
 @dataclass
 class AppService:
-    """应用服务"""
+    """应用 服务"""
     db: SQLAlchemy
 
     def get_app(self, id: uuid.UUID) -> App:
