@@ -38,7 +38,7 @@ class Provider(BaseModel):
         """对应服务提供商初始化"""
         super().__init__(**kwargs)
         self._provider_init()
- 
+
     def get_tool(self, tool_name: str) -> Any:
         """根据工具名称 获取该提供商下的指定工具"""
         return self.tool_func_map.get(tool_name)
@@ -60,7 +60,7 @@ class Provider(BaseModel):
         providers_path = os.path.join(os.path.dirname(entities_path), "providers")
         providers_tool_path = os.path.join(providers_path, self.name)
 
-        # 组装获取 position.yaml 数据
+        # 组装获取 positions.yaml 数据
         position_yaml_path = os.path.join(providers_tool_path, "positions.yaml")
         with open(position_yaml_path, encoding="utf-8") as f:
             position_yaml_data = yaml.safe_load(f)
@@ -73,7 +73,6 @@ class Provider(BaseModel):
 
             # 工具信息实体填充到 tool_entity_map
             self.tool_entity_map[tool_name] = ToolEntity(**tool_yaml_data)
-
             # 动态导入对应的工具填充到 tool_func_map
             self.tool_func_map[tool_name] = dynamic_import(
                 f"internal.core.tools.builtin_tools.providers.{self.name}",

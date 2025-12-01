@@ -63,13 +63,14 @@ class AppHandle:
 
     def test(self):
         # 测试用测试用
-        google_serper = self.provider_factory.get_providers()
-        print(google_serper)
+        providers = self.provider_factory.get_provider_entities()
+        print([provider for provider in providers])
+        print([provider.model_dump() for provider in providers])
         # print(google_serper.invoke('苹果公司是那一年成立的 创始人是谁'))
         # req = TestReq()
         #
         # if not req.validate():
         #     return validate_error_json(req.errors)
 
-        return success_json({"content": 'abc'})
+        return success_json({"providers": [provider.model_dump() for provider in providers]})
         # raise ForbiddenException("无权限")

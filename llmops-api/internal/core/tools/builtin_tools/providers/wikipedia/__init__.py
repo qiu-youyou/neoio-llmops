@@ -2,10 +2,9 @@
 # -*- encoding: utf-8 -*-
 """
 @File   :   __init__.py
-@Time   :   2025/11/28 16:12
+@Time   :   2025/12/1 09:54
 @Author :   s.qiu@foxmail.com
 """
+from .wikipedia_search import wikipedia_search
 
-from .gaode_weather import gaode_weather
-
-__all__ = ['gaode_weather']
+__all__ = ['wikipedia_search']

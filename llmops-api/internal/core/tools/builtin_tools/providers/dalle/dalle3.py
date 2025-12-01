@@ -19,5 +19,5 @@ def dalle3(**kwargs) -> BaseTool:
     """返回DALLE3绘图工具"""
 
     return OpenAIDALLEImageGenerationTool(
-        api_wrapper=DallEAPIWrapper(model='dall-e-2', **kwargs),
+        api_wrapper=DallEAPIWrapper(model='dall-e-3', **kwargs),
     )
