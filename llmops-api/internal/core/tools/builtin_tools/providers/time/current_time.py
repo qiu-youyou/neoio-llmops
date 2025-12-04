@@ -9,7 +9,7 @@
 from datetime import datetime
 from typing import Any
 
-from langchain_core.tools import BaseTool
+from langchain.tools import BaseTool
 
 
 class CurrentTimeTool(BaseTool):

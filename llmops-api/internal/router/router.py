@@ -40,9 +40,19 @@ class Router:
         # 内置插件广场 模块
         bp.add_url_rule(rule='/builtin_tools', view_func=self.builtin_tool_handler.get_builtin_tools)
         bp.add_url_rule(
-            rule='/builtin_tools/{string:provider_name}toos/{string:tool_name}',
+            "/builtin-tools/<string:provider_name>/tools/<string:tool_name>",
             view_func=self.builtin_tool_handler.get_provider_tool,
         )
+        bp.add_url_rule(
+            "/builtin-tools/<string:provider_name>/icon",
+            view_func=self.builtin_tool_handler.get_provider_icon,
+        )
+        bp.add_url_rule(
+            "/builtin-tools/categories",
+            view_func=self.builtin_tool_handler.get_categories,
+        )
 
+        # 自定义插件广场 模块
+        
         # 在应用上注册蓝图
         app.register_blueprint(bp)

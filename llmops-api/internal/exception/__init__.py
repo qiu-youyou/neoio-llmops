@@ -7,9 +7,9 @@
 """
 
 from .exception import (CustomException,
-                        FailedException, NotFoundException, UnauthorizedException, ForbiddenException,
+                        FailException, NotFoundException, UnauthorizedException, ForbiddenException,
                         ValidateErrorException)
 
 __all__ = ['CustomException',
-           'FailedException', 'NotFoundException', 'UnauthorizedException', "ForbiddenException",
+           'FailException', 'NotFoundException', 'UnauthorizedException', "ForbiddenException",
            "ValidateErrorException"]

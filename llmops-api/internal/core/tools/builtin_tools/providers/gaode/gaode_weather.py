@@ -11,7 +11,7 @@ import os
 from typing import Type, Any
 
 import requests
-from langchain_core.tools import BaseTool
+from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
 
 from internal.lib.helper import add_attribute

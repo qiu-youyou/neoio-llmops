@@ -9,21 +9,22 @@ import os
 from typing import Any
 
 import yaml
-from injector import inject, singleton
+from injector import singleton
+from pydantic import BaseModel, Field
 
-from internal.core.tools.builtin_tools.entity import (
+from internal.core.tools.builtin_tools.entities import (
     ProviderEntity, Provider
 )
 
 
-@inject
 @singleton
-class BuiltinProviderManager:
+class BuiltinProviderManager(BaseModel):
     """服务提供商工厂类"""
-    provider_map: dict[str, Provider] = {}
+    provider_map: dict[str, Provider] = Field(default_factory=dict)
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """初始化对应的 provider_tool_map"""
+        super().__init__(**kwargs)
         self._get_provider_tool_map()
 
     def get_provider(self, provider_name: str) -> Provider:
@@ -62,7 +63,7 @@ class BuiltinProviderManager:
         for idx, provider_data in enumerate(providers_yaml_data):
             provider_entity = ProviderEntity(**provider_data)
             self.provider_map[provider_entity.name] = Provider(
-                name=provider_entity.name,
                 position=idx + 1,
+                name=provider_entity.name,
                 provider_entity=provider_entity,
             )

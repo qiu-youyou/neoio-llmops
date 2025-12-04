@@ -6,12 +6,14 @@
 @Author :   s.qiu@foxmail.com
 """
 
+import io
 from dataclasses import dataclass
 
+from flask import send_file
 from injector import inject
 
 from internal.service import BuiltinToolService
-from pkg.response import success_message
+from pkg.response import success_json
 
 
 @inject
@@ -21,10 +23,21 @@ class BuiltinToolHandler:
     builtin_tool_service: BuiltinToolService
 
     def get_builtin_tools(self):
-        """获取所有内置 工具信息+供应商信息"""
-        self.builtin_tool_service.get_builtin_tools()
-        return success_message(f"应用创建成功, id 为")
+        """获取所有内置插件的 供应商信息+工具信息"""
+        builtin_tools = self.builtin_tool_service.get_builtin_tools()
+        return success_json(builtin_tools)
 
     def get_provider_tool(self, provider_name: str, tool_name: str):
-        """根据传递的 供应商+工具 名字获取指定工具信息"""
-        pass
+        """根据传递的 供应商+工具 名字获取指定的内置工具信息"""
+        builtin_tool = self.builtin_tool_service.get_provider_tool(provider_name, tool_name)
+        return success_json(builtin_tool)
+
+    def get_provider_icon(self, provider_name: str):
+        """根据 供应商 获取该供应商图标"""
+        icon, mimetype = self.builtin_tool_service.get_provider_icon(provider_name)
+        return send_file(io.BytesIO(icon), mimetype)
+
+    def get_categories(self):
+        """获取内置插件的分类信息列表"""
+        categories = self.builtin_tool_service.get_categories()
+        return success_json(categories)
