@@ -5,7 +5,8 @@
 @Time   :   2025/9/17 16:21
 @Author :   s.qiu@foxmail.com
 """
+from .api_tool_service import ApiToolService
 from .app_service import AppService
 from .builtin_tool_service import BuiltinToolService
 
-__all__ = ['AppService', 'BuiltinToolService']
+__all__ = ["AppService", "BuiltinToolService", "ApiToolService"]

@@ -12,7 +12,7 @@ from langchain_community.utilities import WikipediaAPIWrapper
 from internal.lib.helper import add_attribute
 
 
-@add_attribute('args_schema', WikipediaQueryInput)
+@add_attribute("args_schema", WikipediaQueryInput)
 def wikipedia_search(**kwargs) -> BaseTool:
     """返回维基百科搜索工具"""
     return WikipediaQueryRun(

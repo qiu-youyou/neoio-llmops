@@ -14,10 +14,10 @@ from pydantic import BaseModel, Field
 
 class ToolParamsType(str, Enum):
     """工具参数类型 枚举类"""
-    STRING = 'string'
-    NUMBER = 'number'
-    BOOLEAN = 'boolean'
-    SELECT = 'select'
+    STRING = "string"
+    NUMBER = "number"
+    BOOLEAN = "boolean"
+    SELECT = "select"
 
 
 class ToolParam(BaseModel):

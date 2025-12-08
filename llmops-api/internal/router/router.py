@@ -10,13 +10,13 @@ from dataclasses import dataclass
 from flask import Flask, Blueprint
 from injector import inject
 
-from internal.handle import AppHandle, BuiltinToolHandler
+from internal.handler import AppHandler, BuiltinToolHandler
 
 
 @inject
 @dataclass
 class Router:
-    app_handle: AppHandle
+    app_handle: AppHandler
     builtin_tool_handler: BuiltinToolHandler
 
     """路由"""
@@ -24,21 +24,21 @@ class Router:
     def register_router(self, app: Flask):
         """注册路由"""
         # 创建一个蓝图
-        bp = Blueprint('llmops', __name__, url_prefix='')
+        bp = Blueprint("llmops", __name__, url_prefix="")
 
         # 将 URL 与对应的控制器方法绑定
-        bp.add_url_rule(rule='/test', methods=['POST'], view_func=self.app_handle.test)
+        bp.add_url_rule(rule="/test", methods=["POST"], view_func=self.app_handle.test)
         # 对话接口测试
-        bp.add_url_rule(rule='/apps/<uuid:app_id>/debug', methods=['POST'], view_func=self.app_handle.debug)
+        bp.add_url_rule(rule="/apps/<uuid:app_id>/debug", methods=["POST"], view_func=self.app_handle.debug)
 
         # 应用管理 模块
-        bp.add_url_rule(rule='/app/<uuid:id>', view_func=self.app_handle.get_app)
-        bp.add_url_rule(rule='/app', methods=['POST'], view_func=self.app_handle.create_app)
-        bp.add_url_rule(rule='/app/<uuid:id>', methods=['POST'], view_func=self.app_handle.update_app)
-        bp.add_url_rule(rule='/app/<uuid:id>/delete', methods=['POST'], view_func=self.app_handle.delete_app)
+        bp.add_url_rule(rule="/app/<uuid:id>", view_func=self.app_handle.get_app)
+        bp.add_url_rule(rule="/app", methods=["POST"], view_func=self.app_handle.create_app)
+        bp.add_url_rule(rule="/app/<uuid:id>", methods=["POST"], view_func=self.app_handle.update_app)
+        bp.add_url_rule(rule="/app/<uuid:id>/delete", methods=["POST"], view_func=self.app_handle.delete_app)
 
         # 内置插件广场 模块
-        bp.add_url_rule(rule='/builtin_tools', view_func=self.builtin_tool_handler.get_builtin_tools)
+        bp.add_url_rule(rule="/builtin_tools", view_func=self.builtin_tool_handler.get_builtin_tools)
         bp.add_url_rule(rule="/builtin-tools/<string:provider_name>/tools/<string:tool_name>",
                         view_func=self.builtin_tool_handler.get_provider_tool)
         bp.add_url_rule(rule="/builtin-tools/<string:provider_name>/icon",

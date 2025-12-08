@@ -17,7 +17,7 @@ from .http_code import HttpCode
 class Response:
     """基础HTTP接口响应格式"""
     code: HttpCode = HttpCode.SUCCESS
-    message: str = ''
+    message: str = ""
     data: Any = field(default_factory=dict)
 
 
@@ -46,17 +46,17 @@ def validate_error_json(errors: dict = None):
     return json(Response(code=HttpCode.VALIDATE_ERROR, message=msg, data=errors))
 
 
-def message(code: HttpCode = None, msg: str = ''):
+def message(code: HttpCode = None, msg: str = ""):
     """消息提示响应"""
     return json(Response(code=code, message=msg, data={}))
 
 
-def success_message(msg: str = ''):
+def success_message(msg: str = ""):
     """成功消息响应"""
     return message(HttpCode.SUCCESS, msg)
 
 
-def fail_message(msg: str = ''):
+def fail_message(msg: str = ""):
     """失败消息响应"""
     return message(HttpCode.FAIL, msg)
 

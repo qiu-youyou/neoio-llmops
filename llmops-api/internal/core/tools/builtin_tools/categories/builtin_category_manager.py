@@ -39,9 +39,9 @@ class BuiltinCategoryManager(BaseModel):
         # 获取yaml数据路径并加载
         current_path = os.path.abspath(__file__)
         categories_path = os.path.dirname(current_path)
-        categories_yaml_path = os.path.join(categories_path, 'categories.yaml')
+        categories_yaml_path = os.path.join(categories_path, "categories.yaml")
 
-        with open(categories_yaml_path, encoding='utf-8') as f:
+        with open(categories_yaml_path, encoding="utf-8") as f:
             categories_data = yaml.safe_load(f)
 
             # 循环遍历所有分类，并且将分类加载成实体信息
@@ -49,9 +49,9 @@ class BuiltinCategoryManager(BaseModel):
                 category_entity = CategoryEntity(**category)
 
                 # 读取分类图标数据
-                icon_path = os.path.join(categories_path, 'icons', category_entity.icon)
+                icon_path = os.path.join(categories_path, "icons", category_entity.icon)
                 if not os.path.exists(icon_path):
-                    raise NotFoundException(f'缺少该分类{category_entity.category}的图标')
+                    raise NotFoundException(f"缺少该分类{category_entity.category}的图标")
 
                 # 读取icon数据
                 with open(icon_path, encoding="utf-8") as f:

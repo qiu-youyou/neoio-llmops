@@ -6,7 +6,7 @@
 @Author :   s.qiu@foxmail.com
 """
 
-from .app_handle import AppHandle
+from .app_handler import AppHandler
 from .builtin_tool_handler import BuiltinToolHandler
 
-__all__ = ['AppHandle', 'BuiltinToolHandler']
+__all__ = ["AppHandler", "BuiltinToolHandler"]

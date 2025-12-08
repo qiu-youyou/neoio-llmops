@@ -14,11 +14,11 @@ from internal.extension.database_extension import db
 class App(db.Model):
     """基础模型类"""
 
-    __tablename__ = 'app'
+    __tablename__ = "app"
 
     __table_args__ = (
-        PrimaryKeyConstraint('id', name='pk_app_id'),
-        Index('idx_app_account_id', 'account_id', ),
+        PrimaryKeyConstraint("id", name="pk_app_id"),
+        Index("idx_app_account_id", "account_id", ),
     )
 
     id = Column(UUID, nullable=False, server_default=text("uuid_generate_v4()"))

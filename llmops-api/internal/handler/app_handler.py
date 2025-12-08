@@ -20,14 +20,14 @@ from langchain_core.runnables import RunnableConfig, RunnablePassthrough, Runnab
 from langchain_core.tracers import Run
 from langchain_openai import ChatOpenAI
 
-from internal.schema import CompletionReq
+from internal.schema.app_schema import CompletionReq
 from internal.service.app_service import AppService
 from pkg.response import validate_error_json, success_json, success_message
 
 
 @inject
 @dataclass
-class AppHandle:
+class AppHandler:
     """应用控制器"""
     app_service: AppService
 
@@ -75,15 +75,15 @@ class AppHandle:
         )
 
         # 创建 LLM
-        llm = ChatOpenAI(model='kimi-k2-0905-preview')
+        llm = ChatOpenAI(model="kimi-k2-0905-preview")
 
         # 创建调用链
         chain = (RunnablePassthrough.assign(
-            history=RunnableLambda(self._load_memory_variables) | itemgetter('history'),
+            history=RunnableLambda(self._load_memory_variables) | itemgetter("history"),
         ) | prompt | llm | StrOutputParser()).with_listeners(on_end=self._save_context)
 
         chain_input = {"query": req.query.data}
-        content = chain.invoke(chain_input, config={'configurable': {'memory': memory}})
+        content = chain.invoke(chain_input, config={"configurable": {"memory": memory}})
 
         return success_json({"content": content})
 
@@ -95,16 +95,16 @@ class AppHandle:
     def _save_context(cls, run_obj: Run, config: RunnableConfig) -> None:
         """存储对应的上下文信息到记忆实体中"""
         # 加载记忆
-        configurable = config.get('configurable', {})
-        configurable_memory = configurable.get('memory', None)
+        configurable = config.get("configurable", {})
+        configurable_memory = configurable.get("memory", None)
         if configurable_memory is not None and isinstance(configurable_memory, BaseMemory):
             configurable_memory.save_context(run_obj.inputs, run_obj.outputs)
 
     @classmethod
     def _load_memory_variables(cls, input: Dict[str, Any], config: RunnableConfig) -> Dict[str, Any]:
         """加载记忆变量信息"""
-        configurable = config.get('configurable', {})
-        configurable_memory = configurable.get('memory', None)
+        configurable = config.get("configurable", {})
+        configurable_memory = configurable.get("memory", None)
         if configurable_memory is not None and isinstance(configurable_memory, BaseMemory):
             return configurable_memory.load_memory_variables(input)
-        return {'history': []}
+        return {"history": []}

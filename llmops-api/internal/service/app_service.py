@@ -37,7 +37,7 @@ class AppService:
         # 更新
         with self.db.auto_commit():
             app = self.get_app(id)
-            app.name = 'Youyou机器人'
+            app.name = "Youyou机器人"
             self.db.session.add(app)
         return app
 

@@ -39,7 +39,7 @@ class Http(Flask):
 
         # 初始化扩展
         db.init_app(self)
-        migrate.init_app(self, db, 'internal/migrations')
+        migrate.init_app(self, db, "internal/migrations")
 
         # 注册路由
         router.register_router(self)

@@ -12,7 +12,7 @@ from wtforms.validators import DataRequired, Length
 
 
 class TestReq(FlaskForm):
-    query = StringField('query', validators=[
+    query = StringField("query", validators=[
         DataRequired(message="query字段为必填"),
         Length(max=20, message="query字段最大长度为10")
     ])

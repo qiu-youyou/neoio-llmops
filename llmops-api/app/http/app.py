@@ -31,5 +31,5 @@ app = Http(
     router=injector.get(Router),
 )
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
