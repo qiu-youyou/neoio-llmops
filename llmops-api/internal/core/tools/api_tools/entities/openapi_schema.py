@@ -42,12 +42,14 @@ class OpenAPISchema(BaseModel):
         """校验 server 字段"""
         if server is None or server == "":
             raise ValidateErrorException(message="server字段不能为空")
+        return server
 
     @field_validator("description", mode="before")
     def validate_description(cls, description: str) -> str:
         """校验 description 字段"""
         if description is None or description == "":
             raise ValidateErrorException(message="description字段不能为空")
+        return description
 
     @field_validator("paths", mode="before")
     def validate_paths(cls, paths: dict[str, dict]) -> dict[str, str]:
@@ -74,7 +76,6 @@ class OpenAPISchema(BaseModel):
         # 遍历提取到的所有接口并校验信息，涵盖operationId唯一标识，parameters参数
         operation_ids = []
         for interface in interfaces:
-
             # 校验 description&operationId&parameters
             if not isinstance(interface["operation"].get("description"), str):
                 raise ValidateErrorException("description 不能为空且为字符串")
@@ -85,19 +86,19 @@ class OpenAPISchema(BaseModel):
 
             # 检测operationId是否是唯一的
             if interface["operation"]["operationId"] in operation_ids:
-                raise ValidateErrorException(f"operationId 必须唯一，{interface["operation"]["operationId"]}出现重复")
+                raise ValidateErrorException(f"operationId 必须唯一，{interface['operation']['operationId']}出现重复")
 
             operation_ids.append(interface["operation"]["operationId"])
 
             # 校验 parameters 参数格式
-            for parameter in interface["parameters"]:
+            for parameter in interface["operation"]["parameters"]:
 
                 # 校验 name&in&description&required&type 参数
                 if not isinstance(parameter.get("name"), str):
                     raise ValidateErrorException("parameter.name 参数必须为字符串且不为空")
                 if not isinstance(parameter.get("description"), str):
                     raise ValidateErrorException("parameter.description 参数必须为字符串且不为空")
-                if not isinstance(parameter.get("required"), str):
+                if not isinstance(parameter.get("required"), bool):
                     raise ValidateErrorException("parameter.required 参数必须为布尔值且不为空")
 
                 if (
@@ -105,7 +106,7 @@ class OpenAPISchema(BaseModel):
                         or parameter.get("in") not in ParameterIn.__members__.values()
                 ):
                     raise ValidateErrorException(
-                        f" parameter.in 参数必须为 {"/".join([item.value for item in ParameterIn])}"
+                        f" parameter.in 参数必须为 {'/'.join([item.value for item in ParameterIn])}"
                     )
 
                 if (
@@ -113,7 +114,7 @@ class OpenAPISchema(BaseModel):
                         or parameter.get("type") not in ParameterType.__members__.values()
                 ):
                     raise ValidateErrorException(
-                        f"parameter.type参数必须为{"/".join([item.value for item in ParameterType])}"
+                        f"parameter.type参数必须为{'/'.join([item.value for item in ParameterType])}"
                     )
 
             # 组装数据并更新

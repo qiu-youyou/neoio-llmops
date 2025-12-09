@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from flask import Flask, Blueprint
 from injector import inject
 
-from internal.handler import AppHandler, BuiltinToolHandler
+from internal.handler import AppHandler, BuiltinToolHandler, ApiToolHandler
 
 
 @inject
@@ -18,6 +18,7 @@ from internal.handler import AppHandler, BuiltinToolHandler
 class Router:
     app_handle: AppHandler
     builtin_tool_handler: BuiltinToolHandler
+    api_tool_handler: ApiToolHandler
 
     """路由"""
 
@@ -38,7 +39,7 @@ class Router:
         bp.add_url_rule(rule="/app/<uuid:id>/delete", methods=["POST"], view_func=self.app_handle.delete_app)
 
         # 内置插件广场 模块
-        bp.add_url_rule(rule="/builtin_tools", view_func=self.builtin_tool_handler.get_builtin_tools)
+        bp.add_url_rule(rule="/builtin-tools", view_func=self.builtin_tool_handler.get_builtin_tools)
         bp.add_url_rule(rule="/builtin-tools/<string:provider_name>/tools/<string:tool_name>",
                         view_func=self.builtin_tool_handler.get_provider_tool)
         bp.add_url_rule(rule="/builtin-tools/<string:provider_name>/icon",
@@ -47,6 +48,12 @@ class Router:
                         view_func=self.builtin_tool_handler.get_categories, )
 
         # 自定义API插件 模块
+        bp.add_url_rule(rule="/api-tools/validate-openapi-schema", methods=["POST"],
+                        view_func=self.api_tool_handler.validate_openapi_schema)
+        bp.add_url_rule(rule="/api-tools", methods=["POST"],
+                        view_func=self.api_tool_handler.create_api_tool_provider)
+        bp.add_url_rule(rule="/api-tools/<uuid:provider_id>/delete", methods=["POST"],
+                        view_func=self.api_tool_handler.delete_api_tool_provider)
 
         # 在应用上注册蓝图
         app.register_blueprint(bp)

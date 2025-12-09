@@ -13,11 +13,12 @@ from injector import inject
 
 from internal.model import App
 from pkg.sqlalchemy import SQLAlchemy
+from .base_service import BaseService
 
 
 @inject
 @dataclass
-class AppService:
+class AppService(BaseService):
     """应用 服务"""
     db: SQLAlchemy
 
@@ -28,9 +29,8 @@ class AppService:
 
     def create_app(self) -> App:
         # 创建
-        with self.db.auto_commit():
-            app = App(account_id=uuid.uuid4(), name="测试机器人", description="这是一个简单的聊天机器人", icon="")
-            self.db.session.add(app)
+        app = self.create(App, account_id=uuid.uuid4(), name="测试机器人", description="这是一个简单的聊天机器人",
+                          icon="")
         return app
 
     def update_app(self, id: uuid.UUID) -> App:

@@ -55,7 +55,7 @@ class AppHandler:
         # 校验接口参数
         req = CompletionReq()
         if not req.validate():
-            return validate_error_json(req.erros)
+            return validate_error_json(req.errors)
 
         # 提示词与记忆
         system_prompt = "你是一个强大的聊天机器人，能根据对应的上下文和历史对话信息回复用户问题。"

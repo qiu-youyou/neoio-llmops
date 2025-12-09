@@ -11,9 +11,9 @@ from dataclasses import dataclass
 from injector import inject
 from sqlalchemy import UUID
 
-from internal.schema.api_tool_schema import ValidateOpenAPISchemaReq
+from internal.schema.api_tool_schema import ValidateOpenAPISchemaReq, CreateApiToolReq
 from internal.service import ApiToolService
-from pkg.response import validate_error_json, success_message
+from pkg.response import success_message, validate_error_json
 
 
 @inject
@@ -27,6 +27,11 @@ class ApiToolHandler:
 
     def create_api_tool_provider(self):
         """创建自定义API工具"""
+        req = CreateApiToolReq()
+        if not req.validate():
+            return validate_error_json(req.errors)
+        self.api_tool_service.create_api_tool(req)
+        return success_message("创建自定义API插件成功")
 
     def update_api_tool_provider(self, provider_id: UUID):
         """更新自定义API工具提供者信息"""
@@ -39,14 +44,14 @@ class ApiToolHandler:
 
     def delete_api_tool_provider(self, provider_id: UUID):
         """根据传递的provider_id删除对应的工具提供者信息"""
+        self.api_tool_service.delete_api_tool_provider(provider_id)
+        return success_message(f"删除自定义插件成功", )
 
     def validate_openapi_schema(self):
         """校验 openapi_schema 字符串格式"""
         req = ValidateOpenAPISchemaReq()
         if not req.validate():
             return validate_error_json(req.errors)
-
         # 解析传递的数据
         self.api_tool_service.parse_openapi_schema(req.openapi_schema.data)
-
         return success_message("数据校验成功")
