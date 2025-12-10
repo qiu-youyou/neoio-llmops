@@ -21,7 +21,7 @@ from internal.extension.database_extension import db
 
 
 class ApiToolProvider(db.Model):
-    """API 工具提供者"""
+    """自定义插件提供者"""
     __tablename__ = "api_tool_provider"
     __table_args__ = (
         PrimaryKeyConstraint("id", name="pk_api_tool_provider_id"),
@@ -49,7 +49,7 @@ class ApiToolProvider(db.Model):
 
 
 class ApiTool(db.Model):
-    """API 工具表"""
+    """自定义插件工具表"""
     __tablename__ = "api_tool"
     __table_args__ = (
         PrimaryKeyConstraint("id", name="pk_api_tool_id"),

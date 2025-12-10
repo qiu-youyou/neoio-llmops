@@ -8,6 +8,7 @@
 
 from typing import Any, Optional
 
+from internal.exception import FailException
 from pkg.sqlalchemy import SQLAlchemy
 
 
@@ -20,6 +21,22 @@ class BaseService:
         with self.db.auto_commit():
             model_instance = model(**kwargs)
             self.db.session.add(model_instance)
+        return model_instance
+
+    def delete(self, model_instance: Any) -> Any:
+        """根据传递的模型实例删除数据库记录"""
+        with self.db.auto_commit():
+            self.db.session.delete(model_instance)
+        return model_instance
+
+    def update(self, model_instance: Any, **kwargs) -> Any:
+        """根据传递的模型实例+键值对信息更新数据库记录"""
+        with self.db.auto_commit():
+            for field, value in kwargs.items():
+                if hasattr(model_instance, field):
+                    setattr(model_instance, field, value)
+                else:
+                    raise FailException("更新失败")
         return model_instance
 
     def get(self, model: Any, primary_key: Any) -> Optional[Any]:

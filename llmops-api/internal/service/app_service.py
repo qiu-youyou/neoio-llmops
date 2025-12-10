@@ -29,7 +29,10 @@ class AppService(BaseService):
 
     def create_app(self) -> App:
         # 创建
-        app = self.create(App, account_id=uuid.uuid4(), name="测试机器人", description="这是一个简单的聊天机器人",
+        app = self.create(App,
+                          account_id=uuid.uuid4(),
+                          name="测试机器人",
+                          description="这是一个简单的聊天机器人",
                           icon="")
         return app
 
@@ -38,7 +41,6 @@ class AppService(BaseService):
         with self.db.auto_commit():
             app = self.get_app(id)
             app.name = "Youyou机器人"
-            self.db.session.add(app)
         return app
 
     def delete_app(self, id: uuid.UUID) -> App:
