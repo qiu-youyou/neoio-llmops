@@ -37,8 +37,10 @@ class ApiToolService(BaseService):
 
         # 筛选器&分页查询器
         filters = [ApiToolProvider.account_id == account_id]
+
+        print(req)
         if req.search_word.data:
-            filters.append(ApiToolProvider.name.ilike(f"%{req.search_word}%"))
+            filters.append(ApiToolProvider.name.ilike(f"%{req.search_word.data}%"))
         paginator = Paginator(self.db, req)
 
         api_tool_providers = paginator.paginate(

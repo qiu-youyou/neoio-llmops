@@ -8,6 +8,7 @@
 
 from dataclasses import dataclass
 
+from flask import request
 from injector import inject
 from sqlalchemy import UUID
 
@@ -27,7 +28,7 @@ class ApiToolHandler:
 
     def get_api_tool_providers_with_page(self):
         """获取自定义插件 提供者列表信息，该接口支持分页"""
-        req = GetApiToolProvidersWithPageReq()
+        req = GetApiToolProvidersWithPageReq(request.args)
         if not req.validate():
             return validate_error_json(req.errors)
 
