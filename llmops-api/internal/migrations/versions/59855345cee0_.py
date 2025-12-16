@@ -5,8 +5,8 @@ Revises: 652cbe3d1506
 Create Date: 2025-12-08 10:48:24.061380
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
@@ -22,31 +22,39 @@ def upgrade():
                     sa.Column("id", sa.UUID(), server_default=sa.text("uuid_generate_v4()"), nullable=False),
                     sa.Column("account_id", sa.UUID(), nullable=False),
                     sa.Column("provider_id", sa.UUID(), nullable=False),
-                    sa.Column("name", sa.String(length=255), server_default=sa.text("''::character varying"), nullable=False),
-    sa.Column("description", sa.Text(), server_default=sa.text("''::text
-    "), nullable=False),
-    sa.Column("url", sa.String(length=255), server_default=sa.text("''::character varying"), nullable=False),
-    sa.Column("method", sa.String(length=255), server_default=sa.text("''::character varying"), nullable=False),
-    sa.Column("parameters", postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text(""[]
-    "::jsonb"), nullable = False),
-    sa.Column("updated_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP(0)"), nullable=False),
-    sa.Column("created_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP(0)"), nullable=False),
-    sa.PrimaryKeyConstraint("id", name="pk_api_tool_id")
-    )
+                    sa.Column("name", sa.String(length=255), server_default=sa.text("''::character varying"),
+                              nullable=False),
+                    sa.Column("description", sa.Text(), server_default=sa.text("''::text"), nullable=False),
+                    sa.Column("url", sa.String(length=255), server_default=sa.text("''::character varying"),
+                              nullable=False),
+                    sa.Column("method", sa.String(length=255), server_default=sa.text("''::character varying"),
+                              nullable=False),
+                    sa.Column("parameters", postgresql.JSONB(astext_type=sa.Text()),
+                              server_default=sa.text("'[]'::jsonb"), nullable=False),
+                    sa.Column("updated_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP(0)"),
+                              nullable=False),
+                    sa.Column("created_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP(0)"),
+                              nullable=False),
+                    sa.PrimaryKeyConstraint("id", name="pk_api_tool_id")
+                    )
     op.create_table("api_tool_provider",
                     sa.Column("id", sa.UUID(), server_default=sa.text("uuid_generate_v4()"), nullable=False),
                     sa.Column("account_id", sa.UUID(), nullable=False),
-                    sa.Column("name", sa.String(length=255), server_default=sa.text("''::character varying"), nullable=False),
-    sa.Column("icon", sa.String(length=255), server_default=sa.text("''::character varying"), nullable=False),
-    sa.Column("description", sa.Text(), server_default=sa.text("''::text"), nullable=False),
-    sa.Column("openapi_schema", sa.Text(), server_default=sa.text("''::text
-    "), nullable=False),
-    sa.Column("headers", postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text(""[]
-    "::jsonb"), nullable = False),
-    sa.Column("updated_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP(0)"), nullable=False),
-    sa.Column("created_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP(0)"), nullable=False),
-    sa.PrimaryKeyConstraint("id", name="pk_api_tool_provider_id")
-    )
+                    sa.Column("name", sa.String(length=255), server_default=sa.text("''::character varying"),
+                              nullable=False),
+                    sa.Column("icon", sa.String(length=255), server_default=sa.text("''::character varying"),
+                              nullable=False),
+                    sa.Column("description", sa.Text(), server_default=sa.text("''::text"), nullable=False),
+                    sa.Column("openapi_schema", sa.Text(), server_default=sa.text("''::text"), nullable=False),
+                    sa.Column("headers", postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'[]'::jsonb"),
+                              nullable=False),
+                    sa.Column("updated_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP(0)"),
+                              nullable=False),
+                    sa.Column("created_at", sa.DateTime(), server_default=sa.text("CURRENT_TIMESTAMP(0)"),
+                              nullable=False),
+                    sa.PrimaryKeyConstraint("id", name="pk_api_tool_provider_id")
+                    )
+
     # ### end Alembic commands ###
 
     def downgrade():
