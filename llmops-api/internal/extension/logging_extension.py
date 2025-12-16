@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
-@File   :   loggin_extension
+@File   :   logging_extension
 @Time   :   2025/12/16 13:39
 @Author :   s.qiu@foxmail.com
 """
