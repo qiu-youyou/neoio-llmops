@@ -21,7 +21,7 @@ from langchain_core.tracers import Run
 from langchain_openai import ChatOpenAI
 
 from internal.schema.app_schema import CompletionReq
-from internal.service.app_service import AppService
+from internal.service import AppService, ApiToolService
 from pkg.response import validate_error_json, success_json, success_message
 
 
@@ -30,6 +30,7 @@ from pkg.response import validate_error_json, success_json, success_message
 class AppHandler:
     """应用控制器"""
     app_service: AppService
+    api_tool_service: ApiToolService
 
     def get_app(self, id: UUID):
         """查询APP记录"""
@@ -87,10 +88,6 @@ class AppHandler:
 
         return success_json({"content": content})
 
-    def test(self):
-        return success_json({})
-        # raise ForbiddenException("无权限")
-
     @classmethod
     def _save_context(cls, run_obj: Run, config: RunnableConfig) -> None:
         """存储对应的上下文信息到记忆实体中"""
@@ -108,3 +105,8 @@ class AppHandler:
         if configurable_memory is not None and isinstance(configurable_memory, BaseMemory):
             return configurable_memory.load_memory_variables(input)
         return {"history": []}
+
+    def test(self):
+        # return success_json({})
+        return self.api_tool_service.api_tool_invoke()
+        # raise ForbiddenException("无权限")

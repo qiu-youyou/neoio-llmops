@@ -15,6 +15,7 @@ from injector import inject
 from sqlalchemy import desc
 
 from internal.core.tools.api_tools.entities import OpenAPISchema
+from internal.core.tools.api_tools.providers import ApiProviderManager
 from internal.exception import ValidateErrorException, NotFoundException
 from internal.model import ApiToolProvider, ApiTool
 from internal.schema.api_tool_schema import CreateApiToolReq, GetApiToolProvidersWithPageReq
@@ -26,8 +27,9 @@ from .base_service import BaseService
 @inject
 @dataclass
 class ApiToolService(BaseService):
-    db: SQLAlchemy
     """自定义插件服务"""
+    db: SQLAlchemy
+    api_provider_manager: ApiProviderManager
 
     def get_api_tool_providers_with_page(self, req: GetApiToolProvidersWithPageReq) -> tuple[list[Any], Paginator]:
         """获取自定义插件服务提供者分页列表数据"""
@@ -190,6 +192,31 @@ class ApiToolService(BaseService):
         api_tool_provider = self.get(ApiToolProvider, provider_id)
         api_tool.provider = api_tool_provider
         return api_tool
+
+    def api_tool_invoke(self):
+
+        provider_id = "80d187f0-0a7a-4a88-b2ce-7f9b8cbb4351"
+        tool_name = "YoudaoSuggest"
+
+        api_tool = self.db.session.query(ApiTool).filter(
+            ApiTool.provider_id == provider_id,
+            ApiTool.name == tool_name,
+        ).one_or_none()
+        api_tool_provider = api_tool.provider
+
+        from internal.core.tools.api_tools.entities import ToolEntity
+
+        tool = self.api_provider_manager.get_tool(ToolEntity(
+            id=provider_id,
+            name=tool_name,
+            url=api_tool.url,
+            method=api_tool.method,
+            description=api_tool.description,
+            headers=api_tool_provider.headers,
+            parameters=api_tool.parameters,
+        ))
+
+        return tool.invoke({"q": "love", "doctype": "json"})
 
     @classmethod
     def parse_openapi_schema(cls, openapi_schema_str: str) -> Any:

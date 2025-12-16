@@ -66,5 +66,7 @@ class Router:
             view_func=self.api_tool_handler.get_api_tool,
         )
 
+        # 上文件模块
+
         # 在应用上注册蓝图
         app.register_blueprint(bp)
