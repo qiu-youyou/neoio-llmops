@@ -5,7 +5,7 @@
 @Time   :   2025/12/16 14:09
 @Author :   s.qiu@foxmail.com
 """
-
+from regex._regex_core import Character
 from sqlalchemy import (
     Column,
     UUID,
@@ -16,10 +16,12 @@ from sqlalchemy import (
     DateTime,
     PrimaryKeyConstraint,
     text,
+    func
 )
 from sqlalchemy.dialects.postgresql import JSONB
 
 from internal.extension.database_extension import db
+from internal.model.app import AppDatasetJoin
 
 
 class Dataset(db.Model):
@@ -41,6 +43,41 @@ class Dataset(db.Model):
         server_onupdate=text('CURRENT_TIMESTAMP(0)'),
     )
     created_at = Column(DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP(0)'))
+
+    @property
+    def document_count(self) -> int:
+        """只读属性 该知识库下文档数"""
+        return (
+            db.session.query(Document).
+            filter(Document.dataset_id == self.id).
+            scalar()
+        )
+
+    @property
+    def hit_count(self) -> int:
+        """只读属性 获取该知识库的命中次数"""
+        return (
+            db.session.query(func.coalesce(func.sum(Segment.hit_count), 0)).
+            filter(Segment.dataset_id == self.id).
+            scalar()
+        )
+
+    @property
+    def related_app_count(self) -> int:
+        """只读属性 获取该知识库关联的应用数"""
+        return (
+            db.session.query(func.count(AppDatasetJoin.id)).
+            filter(AppDatasetJoin.dataset_id == self.id).
+            scalar()
+        )
+
+    @property
+    def character_count(self) -> int:
+        return (
+            db.session.query(func.coalesce(func.sum(Segment.character_count), 0)).
+            filter(Segment.dataset_id == self.id).
+            scalar()
+        )
 
 
 class Document(db.Model):

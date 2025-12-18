@@ -6,11 +6,11 @@
 @Author :   s.qiu@foxmail.com
 """
 from .api_tool import ApiTool, ApiToolProvider
-from .app import App
+from .app import App, AppDatasetJoin
 from .dataset import Dataset, Document, Segment, KeywordTable, DatasetQuery, ProcessRule
 
 __all__ = [
-    "App",
+    "App", "AppDatasetJoin",
     "ApiTool", "ApiToolProvider",
     "Dataset", "Document", "Segment", "KeywordTable", "DatasetQuery", "ProcessRule"
 ]
