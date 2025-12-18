@@ -7,5 +7,10 @@
 """
 from .api_tool import ApiTool, ApiToolProvider
 from .app import App
+from .dataset import Dataset, Document, Segment, KeywordTable, DatasetQuery, ProcessRule
 
-__all__ = ["App", "ApiTool", "ApiToolProvider"]
+__all__ = [
+    "App",
+    "ApiTool", "ApiToolProvider",
+    "Dataset", "Document", "Segment", "KeywordTable", "DatasetQuery", "ProcessRule"
+]
