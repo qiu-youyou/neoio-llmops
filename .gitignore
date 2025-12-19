@@ -21,6 +21,7 @@ tmp/*
 venv/*
 storage/*
 llmops-api/storage/*
+llmops-api/internal/core/embeddings/*
 __pycache__/
 *.pyc
 

@@ -22,7 +22,7 @@ from langchain_core.tracers import Run
 from langchain_openai import ChatOpenAI
 
 from internal.schema.app_schema import CompletionReq
-from internal.service import AppService, ApiToolService
+from internal.service import AppService, VectorDatabaseService
 from internal.task.demo_task import demo_task
 from pkg.response import validate_error_json, success_json, success_message
 
@@ -32,7 +32,7 @@ from pkg.response import validate_error_json, success_json, success_message
 class AppHandler:
     """应用控制器"""
     app_service: AppService
-    api_tool_service: ApiToolService
+    vector_database_service: VectorDatabaseService
 
     def get_app(self, id: UUID):
         """查询APP记录"""
@@ -61,7 +61,7 @@ class AppHandler:
             return validate_error_json(req.errors)
 
         # 提示词与记忆
-        system_prompt = "你是一个强大的聊天机器人，能根据对应的上下文和历史对话信息回复用户问题。"
+        system_prompt = "你是一个强大的聊天机器人，能根据对应的上下文和历史对话信息回复用户问题。\n\n<context>{context}</context>"
 
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
@@ -80,9 +80,12 @@ class AppHandler:
         # 创建 LLM
         llm = ChatOpenAI(model="kimi-k2-0905-preview")
 
+        retriever = self.vector_database_service.get_retriever() | self.vector_database_service.combine_documents
+
         # 创建调用链
         chain = (RunnablePassthrough.assign(
             history=RunnableLambda(self._load_memory_variables) | itemgetter("history"),
+            context=itemgetter("query") | retriever,
         ) | prompt | llm | StrOutputParser()).with_listeners(on_end=self._save_context)
 
         chain_input = {"query": req.query.data}
@@ -109,7 +112,6 @@ class AppHandler:
         return {"history": []}
 
     def test(self):
-        # return success_json({})
         demo_task.delay(uuid.uuid4())
-        return self.api_tool_service.api_tool_invoke()
+        return success_json({})
         # raise ForbiddenException("无权限")
