@@ -23,3 +23,5 @@ class ExtensionModule(Module):
         binder.bind(SQLAlchemy, to=db)
         binder.bind(Migrate, to=migrate)
         binder.bind(Redis, to=redis_client)
+
+# todo::: 修改注入

@@ -9,10 +9,10 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from flask import request
 from injector import inject
 
 from internal.core.file_extractor import FileExtractor
+from internal.model import UploadFile
 from internal.schema.dataset_schema import CreateDatasetReq, UpdateDatasetReq, GetDatasetResp, GetDatasetsWithPageReq, \
     GetDatasetsWithPageResp
 from internal.service import EmbeddingsService
@@ -68,9 +68,9 @@ class DatasetHandler:
 
     def embeddings_query(self):
         """测试 embedding"""
-        query = request.args.get("query")
-        keywords = self.jieba_service.extract_keywords(query)
-        return success_json({"keywords": keywords})
-        # upload_file = self.db.session.query(UploadFile).get("7d2f59b8-6e9e-432e-ad0c-a46685280f87")
-        # content = self.file_extractor.load(upload_file, True)
-        # return success_json({"content": content})
+        # query = request.args.get("query")
+        # keywords = self.jieba_service.extract_keywords(query)
+        # return success_json({"keywords": keywords})
+        upload_file = self.db.session.query(UploadFile).get("5fb56c65-2d49-4cab-bf38-7d32325675fb")
+        content = self.file_extractor.load(upload_file, True)
+        return success_json({"content": content})
