@@ -16,4 +16,28 @@ class ProcessType(str, Enum):
     AUTOMATIC = "automatic"
     CUSTOM = "custom"
 
-# todo:::默认的处理规则
+
+# 默认的处理规则
+DEFAULT_PROCESS_RULE = {
+    "mode": "custom",
+    "rule": {
+        "pre_process_rules": [
+            {"id": "remove_extra_space", "enabled": True},
+            {"id": "remove_url_and_email", "enabled": True},
+        ],
+        "segment": {
+            "separators": [
+                "\n\n",
+                "\n",
+                "。|！|？",
+                "\.\s|\!\s|\?\s",  # 英文标点符号后面通常需要加空格
+                "；|;\s",
+                "，|,\s",
+                " ",
+                ""
+            ],
+            "chunk_size": 500,
+            "chunk_overlap": 50,
+        }
+    }
+}

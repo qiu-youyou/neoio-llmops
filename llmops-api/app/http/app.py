@@ -7,18 +7,15 @@
 """
 import dotenv
 from flask_migrate import Migrate
-from injector import Injector
 
 from config import Config
 from internal.router import Router
 from internal.server import Http
 from pkg.sqlalchemy import SQLAlchemy
-from .module import ExtensionModule
+from .module import injector
 
 # 加载ENV到环境变量
 dotenv.load_dotenv()
-
-injector = Injector([ExtensionModule])
 
 # 加载配置
 conf = Config()

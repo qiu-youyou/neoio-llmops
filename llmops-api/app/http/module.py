@@ -7,6 +7,7 @@
 """
 
 from flask_migrate import Migrate
+from injector import Injector
 from injector import Module, Binder
 from redis import Redis
 
@@ -24,4 +25,5 @@ class ExtensionModule(Module):
         binder.bind(Migrate, to=migrate)
         binder.bind(Redis, to=redis_client)
 
-# todo::: 修改注入
+
+injector = Injector([ExtensionModule])

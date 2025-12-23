@@ -12,12 +12,14 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from injector import inject
+from sqlalchemy import desc
 
 from internal.entity.dataset_entity import ProcessType
 from internal.entity.upload_file_entity import ALLOWED_DOCUMENT_EXTENSION
 from internal.exception import ForbiddenException, FailException
 from internal.model import Document, Dataset, UploadFile, ProcessRule
 from internal.service import BaseService
+from internal.task.document_task import build_documents
 from pkg.sqlalchemy import SQLAlchemy
 
 
@@ -39,7 +41,7 @@ class DocumentService(BaseService):
         account_id = '46db30d1-3199-4e79-a0cd-abf12fa6858f'
 
         dataset = self.get(Dataset, dataset_id)
-        if dataset is None or dataset.account_id != account_id:
+        if dataset is None or str(dataset.account_id) != account_id:
             raise ForbiddenException("知识库不存在或无权限")
 
         # 提取文件并校验文件权限与扩展
@@ -67,14 +69,36 @@ class DocumentService(BaseService):
             rule=rule,
         )
 
-        # 获取档期知识库最新文档的位置
+        # 获取当前知识库最新文档的位置
+        position = self.get_latest_document_position(dataset_id)
 
         # 遍历所有合法的上传文件列表并记录数据
+        documents = []
+        for upload_file in upload_files:
+            position += 1
+            document = self.create(
+                Document,
+                account_id=account_id,
+                dataset_id=dataset_id,
+                upload_file_id=upload_file.id,
+                process_rule_id=process_rule.id,
+                batch=batch,
+                name=upload_file.name,
+                position=position,
+            )
+            documents.append(document)
 
-        # 调用异步任务，完成后续操作
+        # 调用异步任务，完成处理文档操作
+        build_documents.delay([document.id for document in documents])
 
         # 返回文档列表与处理批次
-        # return doucments, batch
+        return documents, batch
 
-        def get_latest_document_position(self, dataset_id: UUID) -> int:
-            """获取该知识库最新文档位置"""
+    def get_latest_document_position(self, dataset_id: UUID) -> int:
+        """获取该知识库最新文档位置"""
+        document = (
+            self.db.session.query(Document).filter(Document.account_id == dataset_id)
+            .order_by(desc("position"))
+            .first()
+        )
+        return document.position if document else 0

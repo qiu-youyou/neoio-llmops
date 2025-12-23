@@ -5,6 +5,7 @@
 @Time   :   2025/12/22 22:22
 @Author :   s.qiu@foxmail.com
 """
+import time
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -22,5 +23,5 @@ class IndexingService(BaseService):
 
     def build_documents(self, document_ids: list[UUID]) -> None:
         """根据文档id列表 构建知识库文档 涵盖加载、分割、索引构建、存储等"""
-
-        # todo:::
+        time.sleep(10)
+        return "根据文档id列表 构建文档"

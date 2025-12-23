@@ -10,8 +10,9 @@ from uuid import UUID
 
 from injector import inject
 
+from internal.schema.document_schema import CreateDocumentReq, CreateDocumentResp
 from internal.service import DocumentService
-from pkg.response import success_json
+from pkg.response import success_json, validate_error_json
 
 
 @inject
@@ -22,13 +23,12 @@ class DocumentHandler:
 
     def create_documents(self, dataset_id: UUID):
         """知识库上传文档列表"""
-        # req = CreateDocumentReq()
-        # if not req.validate():
-        # return validate_error_json(req.errors)
+        req = CreateDocumentReq()
+        if not req.validate():
+            return validate_error_json(req.errors)
 
         # 调用服务并创建文档 返回文档列表+处理批次
-        # document, batch = self.document_service.create_documents(dataset_id, **req.data)
+        document, batch = self.document_service.create_documents(dataset_id, **req.data)
 
-        # resp = CreateDocumentResp()
-        # return success_json(resp.dump((document, batch)))
-        return success_json({})
+        resp = CreateDocumentResp()
+        return success_json(resp.dump((document, batch)))
