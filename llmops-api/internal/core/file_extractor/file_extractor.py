@@ -99,6 +99,6 @@ class FileExtractor:
             loader = UnstructuredXMLLoader(file_path)
         else:
             loader = UnstructuredFileLoader(file_path) if is_unstructured else TextLoader(file_path)
-
+        docs = loader.load()
         # 3.返回加载的文档列表或者文本
         return delimiter.join([document.page_content for document in loader.load()]) if return_text else loader.load()

@@ -17,6 +17,24 @@ class ProcessType(str, Enum):
     CUSTOM = "custom"
 
 
+class DocumentStatus(str, Enum):
+    """文档状态类型枚举"""
+    WAITING = "waiting"
+    PARSING = "parsing"
+    SPLITTING = "splitting"
+    INDEXING = "indexing"
+    COMPLETED = "completed"
+    ERROR = "error"
+
+
+class SegmentStatus(str, Enum):
+    """片段状态类型枚举"""
+    WAITING = "waiting"
+    INDEXING = "indexing"
+    COMPLETED = "completed"
+    ERROR = "error"
+
+
 # 默认的处理规则
 DEFAULT_PROCESS_RULE = {
     "mode": "custom",

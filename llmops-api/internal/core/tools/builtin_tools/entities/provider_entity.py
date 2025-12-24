@@ -11,7 +11,7 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, Field
 
-from internal.lib import dynamic_import
+from internal.lib.helper import dynamic_import
 from .tool_entity import ToolEntity
 
 

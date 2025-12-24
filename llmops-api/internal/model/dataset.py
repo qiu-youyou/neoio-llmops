@@ -5,7 +5,6 @@
 @Time   :   2025/12/16 14:09
 @Author :   s.qiu@foxmail.com
 """
-from regex._regex_core import Character
 from sqlalchemy import (
     Column,
     UUID,
@@ -22,6 +21,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 from internal.extension.database_extension import db
 from internal.model.app import AppDatasetJoin
+from .upload_file import UploadFile
 
 
 class Dataset(db.Model):
@@ -80,6 +80,27 @@ class Dataset(db.Model):
         )
 
 
+class ProcessRule(db.Model):
+    """文档处理规则表模型"""
+    __tablename__ = "process_rule"
+    __table_args__ = (
+        PrimaryKeyConstraint("id", name="pk_process_rule_id"),
+    )
+
+    id = Column(UUID, nullable=False, server_default=text("uuid_generate_v4()"))
+    account_id = Column(UUID, nullable=False)
+    dataset_id = Column(UUID, nullable=False)
+    mode = Column(String(255), nullable=False, server_default=text("'automic'::character varying"))
+    rule = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    updated_at = Column(
+        DateTime,
+        nullable=False,
+        server_default=text('CURRENT_TIMESTAMP(0)'),
+        server_onupdate=text('CURRENT_TIMESTAMP(0)'),
+    )
+    created_at = Column(DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP(0)'))
+
+
 class Document(db.Model):
     """文档表模型"""
     __tablename__ = "document"
@@ -114,6 +135,14 @@ class Document(db.Model):
         server_onupdate=text('CURRENT_TIMESTAMP(0)'),
     )
     created_at = Column(DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP(0)'))
+
+    @property
+    def upload_file(self) -> UploadFile:
+        return db.session.query(UploadFile).filter(UploadFile.id == self.upload_file_id).one_or_none()
+
+    @property
+    def process_rule(self) -> ProcessRule:
+        return db.session.query(ProcessRule).filter(ProcessRule.id == self.process_rule_id).one_or_none()
 
 
 class Segment(db.Model):
@@ -184,27 +213,6 @@ class DatasetQuery(db.Model):
     source = Column(String(255), nullable=False, server_default=text("'HitTesting'::character varying"))
     source_app_id = Column(UUID, nullable=True)
     created_by = Column(UUID, nullable=True)
-    updated_at = Column(
-        DateTime,
-        nullable=False,
-        server_default=text('CURRENT_TIMESTAMP(0)'),
-        server_onupdate=text('CURRENT_TIMESTAMP(0)'),
-    )
-    created_at = Column(DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP(0)'))
-
-
-class ProcessRule(db.Model):
-    """文档处理规则表模型"""
-    __tablename__ = "process_rule"
-    __table_args__ = (
-        PrimaryKeyConstraint("id", name="pk_process_rule_id"),
-    )
-
-    id = Column(UUID, nullable=False, server_default=text("uuid_generate_v4()"))
-    account_id = Column(UUID, nullable=False)
-    dataset_id = Column(UUID, nullable=False)
-    mode = Column(String(255), nullable=False, server_default=text("'automic'::character varying"))
-    rule = Column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     updated_at = Column(
         DateTime,
         nullable=False,

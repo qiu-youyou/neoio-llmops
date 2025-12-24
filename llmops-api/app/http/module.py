@@ -7,8 +7,7 @@
 """
 
 from flask_migrate import Migrate
-from injector import Injector
-from injector import Module, Binder
+from injector import Module, Binder, Injector
 from redis import Redis
 
 from internal.extension.database_extension import db

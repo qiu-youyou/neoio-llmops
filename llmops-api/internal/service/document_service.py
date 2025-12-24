@@ -18,9 +18,9 @@ from internal.entity.dataset_entity import ProcessType
 from internal.entity.upload_file_entity import ALLOWED_DOCUMENT_EXTENSION
 from internal.exception import ForbiddenException, FailException
 from internal.model import Document, Dataset, UploadFile, ProcessRule
-from internal.service import BaseService
-from internal.task.document_task import build_documents
 from pkg.sqlalchemy import SQLAlchemy
+from .base_service import BaseService
+from .indexing_service import IndexingService
 
 
 @inject
@@ -28,6 +28,7 @@ from pkg.sqlalchemy import SQLAlchemy
 class DocumentService(BaseService):
     """文档服务"""
     db: SQLAlchemy
+    indexing_service: IndexingService
 
     def create_documents(self,
                          dataset_id: UUID,
@@ -89,7 +90,8 @@ class DocumentService(BaseService):
             documents.append(document)
 
         # 调用异步任务，完成处理文档操作
-        build_documents.delay([document.id for document in documents])
+        # build_documents.delay([document.id for document in documents])
+        self.indexing_service.build_documents([document.id for document in documents])
 
         # 返回文档列表与处理批次
         return documents, batch
@@ -97,7 +99,7 @@ class DocumentService(BaseService):
     def get_latest_document_position(self, dataset_id: UUID) -> int:
         """获取该知识库最新文档位置"""
         document = (
-            self.db.session.query(Document).filter(Document.account_id == dataset_id)
+            self.db.session.query(Document).filter(Document.dataset_id == dataset_id)
             .order_by(desc("position"))
             .first()
         )
