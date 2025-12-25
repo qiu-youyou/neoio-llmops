@@ -8,22 +8,27 @@
 import logging
 import re
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
+from flask import Flask, current_app
 from injector import inject
 from langchain_core.documents import Document as LCDocument
 from sqlalchemy import func
 
 from internal.core.file_extractor import FileExtractor
 from internal.entity.dataset_entity import DocumentStatus, SegmentStatus
+from internal.lib.helper import generate_text_hash
 from internal.model import Document, Segment
 from pkg.sqlalchemy import SQLAlchemy
 from .base_service import BaseService
 from .embeddings_service import EmbeddingsService
+from .jieba_service import JiebaService
+from .keyword_table_service import KeywordTableService
 from .process_rule_service import ProcessRuleService
-from ..lib.helper import generate_text_hash
+from .vector_database_service import VectorDatabaseService
 
 
 @inject
@@ -34,6 +39,9 @@ class IndexingService(BaseService):
     file_extractor: FileExtractor
     embeddings_service: EmbeddingsService
     process_rule_service: ProcessRuleService
+    keyword_table_service: KeywordTableService
+    vector_database_service: VectorDatabaseService
+    jieba_service: JiebaService
 
     def build_documents(self, document_ids: list[UUID]) -> None:
         """根据文档id列表 构建知识库文档 涵盖加载、分割、索引构建、存储等"""
@@ -52,6 +60,12 @@ class IndexingService(BaseService):
 
                 # 执行文档分割步骤，片段的信息，更新文档状态
                 lc_segments = self._splitting(document, lc_documents)
+
+                # 执行索引构建、关键词提取
+                self._indexing(document, lc_segments)
+
+                # 执行存储操作 更新文档状态 存储到向量数据库
+                self._completed(document, lc_segments)
 
             except Exception as e:
                 # 更改状态为失败 并记录日志
@@ -143,6 +157,77 @@ class IndexingService(BaseService):
         )
 
         return lc_segments
+
+    def _indexing(self, document: Document, lc_segments: list[LCDocument]) -> None:
+        """构建文档索引 提取关键词、词表构建"""
+
+        for lc_segment in lc_segments:
+            keywords = self.jieba_service.extract_keywords(lc_segment.page_content, 10)
+            # 更新文档片段keywords
+            self.db.session.query(Segment).filter(Segment.id == lc_segment.metadata["segment_id"]).update({
+                "keywords": keywords,
+                "status": SegmentStatus.INDEXING,
+                "indexing_completed_at": datetime.now(),
+            })
+
+            # 当前知识库的关键词表更新
+            keyword_table_record = self.keyword_table_service.get_keyword_table_from_dataset_id(document.dataset_id)
+            keyword_table = {field: set(value) for field, value in keyword_table_record.keyword_table.items()}
+            for keyword in keywords:
+                if keyword not in keyword_table:
+                    keyword_table[keyword] = set()
+                keyword_table[keyword].add(lc_segment.metadata["segment_id"])
+            self.update(keyword_table_record,
+                        keyword_table={field: list(value) for field, value in keyword_table.items()})
+
+        # 更新文档状态
+        self.update(document, indexing_completed_at=datetime.now())
+
+    def _completed(self, document: Document, lc_segments: list[LCDocument]) -> None:
+        """文档片段存储到向量数据库，文档状态已完成"""
+        for lc_segment in lc_segments:
+            lc_segment.metadata["document_enabled"] = True
+            lc_segment.metadata["segment_enabled"] = True
+
+        # 向量存储 每次10条
+        def thread_func(flask_app: Flask, chunks: list[LCDocument], ids: list[UUID]) -> list[UUID]:
+            """线程函数 执行 postgress 与向量存储"""
+            try:
+                with flask_app.app_context():
+                    self.vector_database_service.vector_store.add_documents(chunks, ids=ids)
+                    with self.db.auto_commit():
+                        self.db.session.query(Segment).filter(Segment.node_id.in_(ids)).update({
+                            "status": SegmentStatus.COMPLETED,
+                            "completed_at": datetime.now(),
+                            "enabled": True,
+                        })
+            except Exception as e:
+                logging.exception(f"构建文档片段索引发生异常，错误信息 {str(e)}")
+                with self.db.auto_commit():
+                    self.db.session.query(Segment).filter(Segment.node_id.in_(ids)).update({
+                        "status": SegmentStatus.ERROR,
+                        "completed_at": None,
+                        "stopped_at": datetime.now(),
+                        "enabled": False,
+                    })
+
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = []
+            for i in range(0, len(lc_segments), 10):
+                chunks = lc_segments[i: i + 10]
+                ids = [chunk.metadata["node_id"] for chunk in chunks]
+                futures.append(executor.submit(thread_func, current_app._get_current_object(), chunks, ids))
+
+            for future in futures:
+                future.result()
+
+        # 更新文档状态
+        self.update(
+            document,
+            status=DocumentStatus.COMPLETED,
+            completed_at=datetime.now(),
+            enabled=True,
+        )
 
     @classmethod
     def _clean_extra_text(cls, text: str) -> str:
