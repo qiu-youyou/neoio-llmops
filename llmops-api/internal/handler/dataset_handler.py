@@ -15,9 +15,9 @@ from injector import inject
 from internal.core.file_extractor import FileExtractor
 from internal.schema.dataset_schema import CreateDatasetReq, UpdateDatasetReq, GetDatasetResp, GetDatasetsWithPageReq, \
     GetDatasetsWithPageResp
-from internal.service import EmbeddingsService
-from internal.service.dataset_service import DatasetService
-from internal.service.jieba_service import JiebaService
+from internal.service import DatasetService
+from internal.service import EmbeddingsService, VectorDatabaseService
+from internal.service import JiebaService
 from pkg.paginator import PageModel
 from pkg.response import success_message, validate_error_json, success_json
 from pkg.sqlalchemy import SQLAlchemy
@@ -30,6 +30,7 @@ class DatasetHandler:
     file_extractor: FileExtractor
     dataset_service: DatasetService
     embeddings_service: EmbeddingsService
+    vector_database_service: VectorDatabaseService
     jieba_service: JiebaService
     db: SQLAlchemy
 
@@ -76,3 +77,27 @@ class DatasetHandler:
         return success_json({"content": content})
         # content = self.embeddings_service.embeddings.embed_query(query)
         # return success_json({"embeddings": content})
+
+    def hit(self, dataset_id: UUID):
+        """召回测试"""
+        from weaviate.classes.query import Filter
+        query = "通过构建统一的知识库平台，企业可以有效减少重复劳动，提高信息利用率，并提升整体运营效率。"
+        retriever = self.vector_database_service.vector_store.as_retriever(
+            search_type="mmr",
+            search_kwargs={
+                "k": 10,
+                "filters": Filter.all_of([
+                    Filter.by_property("document_enabled").equal(True),
+                    Filter.by_property("segment_enabled").equal(True),
+                    Filter.any_of([
+                        Filter.by_property("dataset_id").equal("6b625a77-4bc9-479a-a0bd-244fc524800d"),
+                        Filter.by_property("dataset_id").equal("6b625a77-4bc9-479a-a0bd-244fc5248001"),
+                    ])
+                ])
+            }
+        )
+
+        documents = retriever.invoke(query)
+        return success_json(
+            {"documents":
+                 [{"page_content": document.page_content, "metadata": document.metadata} for document in documents]})

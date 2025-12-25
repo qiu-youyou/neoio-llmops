@@ -99,5 +99,11 @@ class Router:
             methods=["POST"],
         )
 
+        bp.add_url_rule(
+            "/datasets/<uuid:dataset_id>/hit",
+            methods=["POST"],
+            view_func=self.dataset_handler.hit,
+        )
+
         # 在应用上注册蓝图
         app.register_blueprint(bp)

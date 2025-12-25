@@ -52,8 +52,8 @@ class EmbeddingsService:
 
     def _load_model(self):
         """私有方法：真正执行加载模型（只运行一次）"""
-        if self._embeddings is None:
-            # if self._embeddings is not None:
+        # if self._embeddings is None:
+        if self._embeddings is not None:
             return
 
         print("⏳ [Embeddings] 正在首次加载模型到内存 (Lazy Loading)...")
