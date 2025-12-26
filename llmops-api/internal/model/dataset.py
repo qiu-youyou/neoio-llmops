@@ -48,7 +48,7 @@ class Dataset(db.Model):
     def document_count(self) -> int:
         """只读属性 该知识库下文档数"""
         return (
-            db.session.query(Document).
+            db.session.query(func.count(Document.id)).
             filter(Document.dataset_id == self.id).
             scalar()
         )

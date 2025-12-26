@@ -16,8 +16,8 @@ from internal.core.file_extractor import FileExtractor
 from internal.schema.dataset_schema import CreateDatasetReq, UpdateDatasetReq, GetDatasetResp, GetDatasetsWithPageReq, \
     GetDatasetsWithPageResp
 from internal.service import DatasetService
-from internal.service import EmbeddingsService, VectorDatabaseService
 from internal.service import JiebaService
+from internal.service import VectorDatabaseService
 from pkg.paginator import PageModel
 from pkg.response import success_message, validate_error_json, success_json
 from pkg.sqlalchemy import SQLAlchemy
@@ -29,7 +29,6 @@ class DatasetHandler:
     """知识库处理器"""
     file_extractor: FileExtractor
     dataset_service: DatasetService
-    embeddings_service: EmbeddingsService
     vector_database_service: VectorDatabaseService
     jieba_service: JiebaService
     db: SQLAlchemy

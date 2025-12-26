@@ -5,7 +5,6 @@
 @Time   :   2025/9/1 11:46
 @Author :   s.qiu@foxmail.com
 """
-import uuid
 from dataclasses import dataclass
 from operator import itemgetter
 from typing import Dict, Any
@@ -23,7 +22,6 @@ from langchain_openai import ChatOpenAI
 
 from internal.schema.app_schema import CompletionReq
 from internal.service import AppService, VectorDatabaseService
-from internal.task.demo_task import demo_task
 from pkg.response import validate_error_json, success_json, success_message
 
 
@@ -112,6 +110,5 @@ class AppHandler:
         return {"history": []}
 
     def test(self):
-        demo_task.delay(uuid.uuid4())
         return success_json({})
         # raise ForbiddenException("无权限")

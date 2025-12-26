@@ -93,16 +93,20 @@ class Router:
         )
         bp.add_url_rule("/datasets/embeddings", view_func=self.dataset_handler.embeddings_query)
 
+        # 知识库模块 - 文档
+        bp.add_url_rule(
+            "/datasets/<uuid:dataset_id>/hit",
+            methods=["POST"],
+            view_func=self.dataset_handler.hit,
+        )
         bp.add_url_rule(
             "/datasets/<uuid:dataset_id>/documents",
             view_func=self.document_handler.create_documents,
             methods=["POST"],
         )
-
         bp.add_url_rule(
-            "/datasets/<uuid:dataset_id>/hit",
-            methods=["POST"],
-            view_func=self.dataset_handler.hit,
+            "/datasets/<uuid:dataset_id>/documents/batch/<string:batch>",
+            view_func=self.document_handler.get_documents_status,
         )
 
         # 在应用上注册蓝图

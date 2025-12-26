@@ -32,3 +32,8 @@ class DocumentHandler:
 
         resp = CreateDocumentResp()
         return success_json(resp.dump((document, batch)))
+
+    def get_documents_status(self, dataset_id: UUID, batch: str):
+        """根据批处理标识获取文档处理进度"""
+        documents_status = self.document_service.get_documents_status(dataset_id, batch)
+        return success_json(documents_status)

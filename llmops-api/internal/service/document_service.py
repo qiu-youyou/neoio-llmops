@@ -12,15 +12,16 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from injector import inject
-from sqlalchemy import desc
+from sqlalchemy import desc, asc, func
 
-from internal.entity.dataset_entity import ProcessType
+from internal.entity.dataset_entity import ProcessType, SegmentStatus
 from internal.entity.upload_file_entity import ALLOWED_DOCUMENT_EXTENSION
-from internal.exception import ForbiddenException, FailException
-from internal.model import Document, Dataset, UploadFile, ProcessRule
+from internal.exception import ForbiddenException, FailException, NotFoundException
+from internal.lib.helper import datetime_to_timestamp
+from internal.model import Document, Dataset, UploadFile, ProcessRule, Segment
+from internal.task.document_task import build_documents
 from pkg.sqlalchemy import SQLAlchemy
 from .base_service import BaseService
-from .indexing_service import IndexingService
 
 
 @inject
@@ -28,7 +29,6 @@ from .indexing_service import IndexingService
 class DocumentService(BaseService):
     """文档服务"""
     db: SQLAlchemy
-    indexing_service: IndexingService
 
     def create_documents(self,
                          dataset_id: UUID,
@@ -90,11 +90,70 @@ class DocumentService(BaseService):
             documents.append(document)
 
         # 调用异步任务，完成处理文档操作
-        # build_documents.delay([document.id for document in documents])
-        self.indexing_service.build_documents([document.id for document in documents])
+        build_documents.delay([document.id for document in documents])
+        # self.indexing_service.build_documents([document.id for document in documents])
 
         # 返回文档列表与处理批次
         return documents, batch
+
+    def get_documents_status(self, dataset_id: UUID, batch: str) -> list[dict]:
+        """根据批次获取该文档处理状态"""
+
+        # todo:等待授权认证模块完成进行切换调整
+        account_id = '46db30d1-3199-4e79-a0cd-abf12fa6858f'
+        dataset = self.get(Dataset, dataset_id)
+        if dataset is None or str(dataset.account_id) != account_id:
+            raise ForbiddenException("知识库不存在或无权限")
+
+        # 获取该批次文档列表
+        documents = self.db.session.query(Document).filter(
+            Document.dataset_id == dataset.id,
+            Document.batch == batch,
+        ).order_by(asc("position")).all()
+
+        if documents is None or len(documents) == 0:
+            raise NotFoundException("该处理批次未发现文档")
+
+        document_status = []
+        for document in documents:
+            segment_count = self.db.session.query(func.count(Segment.id)).filter(
+                Segment.document_id == document.id,
+            ).scalar()
+
+            completed_segment_count = self.db.session.query(func.count(Segment.id)).filter(
+                Segment.document_id == document.id,
+                Segment.status == SegmentStatus.COMPLETED,
+            ).scalar()
+
+            upload_file = document.upload_file
+            document_status.append({
+                "id": document.id,
+                "name": document.name,
+                "size": upload_file.size,
+                "extension": upload_file.extension,
+                "mime_type": upload_file.mime_type,
+                "position": document.position,
+                "segment_count": segment_count,
+                "completed_segment_count": completed_segment_count,
+                "error": document.error,
+                "status": document.status,
+                "processing_started_at": datetime_to_timestamp(
+                    document.processing_started_at
+                ),
+                "parsing_completed_at": datetime_to_timestamp(
+                    document.parsing_completed_at
+                ),
+                "splitting_completed_at": datetime_to_timestamp(
+                    document.splitting_completed_at
+                ),
+                "indexing_completed_at": datetime_to_timestamp(
+                    document.indexing_completed_at
+                ),
+                "completed_at": datetime_to_timestamp(document.completed_at),
+                "stopped_at": datetime_to_timestamp(document.stopped_at),
+                "created_at": datetime_to_timestamp(document.created_at),
+            })
+        return document_status
 
     def get_latest_document_position(self, dataset_id: UUID) -> int:
         """获取该知识库最新文档位置"""
