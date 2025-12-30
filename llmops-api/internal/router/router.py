@@ -33,6 +33,7 @@ class Router:
 
         # 将 URL 与对应的控制器方法绑定
         bp.add_url_rule("/test", methods=["POST"], view_func=self.app_handle.test)
+        bp.add_url_rule("/datasets/embeddings", view_func=self.dataset_handler.embeddings_query)
         # 对话接口测试
         bp.add_url_rule("/apps/<uuid:app_id>/debug", methods=["POST"], view_func=self.app_handle.debug)
 
@@ -86,28 +87,24 @@ class Router:
         bp.add_url_rule("/datasets", view_func=self.dataset_handler.get_datasets_with_page)
         bp.add_url_rule("/datasets", methods=["POST"], view_func=self.dataset_handler.create_dataset)
         bp.add_url_rule("/datasets/<uuid:dataset_id>", view_func=self.dataset_handler.get_dataset)
-        bp.add_url_rule(
-            "/datasets/<uuid:dataset_id>",
-            view_func=self.dataset_handler.update_dataset,
-            methods=["POST"],
-        )
-        bp.add_url_rule("/datasets/embeddings", view_func=self.dataset_handler.embeddings_query)
+        bp.add_url_rule("/datasets/<uuid:dataset_id>", methods=["POST"], view_func=self.dataset_handler.update_dataset)
 
-        # 知识库模块 - 文档
-        bp.add_url_rule(
-            "/datasets/<uuid:dataset_id>/hit",
-            methods=["POST"],
-            view_func=self.dataset_handler.hit,
-        )
-        bp.add_url_rule(
-            "/datasets/<uuid:dataset_id>/documents",
-            view_func=self.document_handler.create_documents,
-            methods=["POST"],
-        )
-        bp.add_url_rule(
-            "/datasets/<uuid:dataset_id>/documents/batch/<string:batch>",
-            view_func=self.document_handler.get_documents_status,
-        )
+        # 知识库模块-文档
+        bp.add_url_rule("/datasets/<uuid:dataset_id>/documents", methods=["POST"],
+                        view_func=self.document_handler.create_documents)
+        bp.add_url_rule("/datasets/<uuid:dataset_id>/documents",
+                        view_func=self.document_handler.get_documents_with_page)
+        bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>",
+                        view_func=self.document_handler.get_document)
+        bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/name", methods=["POST"],
+                        view_func=self.document_handler.update_document_name)
+        # bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/enabled", methods=["POST"],
+        #                 view_func=self.document_handler.update_document_enabled)
+        # bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/delete", methods=["POST"],
+        #                 view_func=self.document_handler.delete_document)
+        # bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/batch/<string:batch>",
+        #                 view_func=self.document_handler.get_documents_status)
 
+        bp.add_url_rule("/datasets/<uuid:dataset_id>/hit", methods=["POST"], view_func=self.dataset_handler.hit)
         # 在应用上注册蓝图
         app.register_blueprint(bp)

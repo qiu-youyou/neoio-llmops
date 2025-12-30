@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
 @File   :   document_handler
@@ -8,11 +8,14 @@
 from dataclasses import dataclass
 from uuid import UUID
 
+from flask import request
 from injector import inject
 
-from internal.schema.document_schema import CreateDocumentReq, CreateDocumentResp
+from internal.schema.document_schema import CreateDocumentReq, CreateDocumentResp, GetDocumentsWithPageReq, \
+    GetDocumentsWithPageResp, GetDocumentResp, UpdateDocumentNameReq
 from internal.service import DocumentService
-from pkg.response import success_json, validate_error_json
+from pkg.paginator import PageModel
+from pkg.response import success_json, validate_error_json, success_message
 
 
 @inject
@@ -32,6 +35,31 @@ class DocumentHandler:
 
         resp = CreateDocumentResp()
         return success_json(resp.dump((document, batch)))
+
+    def get_documents_with_page(self, dataset_id: UUID):
+        """获取指定知识库的文档分页列表"""
+        req = GetDocumentsWithPageReq(request.args)
+        if not req.validate():
+            return validate_error_json(req.errors)
+
+        documents, paginator = self.document_service.get_documents_with_page(dataset_id, req)
+
+        resp = GetDocumentsWithPageResp(many=True)
+        return success_json(PageModel(list=resp.dump(documents), paginator=paginator))
+
+    def get_document(self, dataset_id: UUID, document_id: UUID):
+        """获取指定知识库下指定文档基础信息"""
+        document = self.document_service.get_document(dataset_id, document_id)
+        resp = GetDocumentResp()
+        return success_json(resp.dump(document))
+
+    def update_document_name(self, dataset_id: UUID, document_id: UUID):
+        """更新指定知识库下指定文档的名称"""
+        req = UpdateDocumentNameReq()
+        if not req.validate():
+            return validate_error_json(req.errors)
+        self.document_service.update_document_name(dataset_id, document_id, name=req.name.data)
+        return success_message("更新文档名称成功")
 
     def get_documents_status(self, dataset_id: UUID, batch: str):
         """根据批处理标识获取文档处理进度"""

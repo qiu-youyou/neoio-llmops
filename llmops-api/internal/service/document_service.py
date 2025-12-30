@@ -20,6 +20,7 @@ from internal.exception import ForbiddenException, FailException, NotFoundExcept
 from internal.lib.helper import datetime_to_timestamp
 from internal.model import Document, Dataset, UploadFile, ProcessRule, Segment
 from internal.task.document_task import build_documents
+from pkg.paginator import Paginator
 from pkg.sqlalchemy import SQLAlchemy
 from .base_service import BaseService
 
@@ -37,7 +38,6 @@ class DocumentService(BaseService):
                          rule: dict = None
                          ) -> tuple[list[Document], str]:
         """创建文档列表 调用异步任务"""
-
         # todo:等待授权认证模块完成进行切换调整
         account_id = '46db30d1-3199-4e79-a0cd-abf12fa6858f'
 
@@ -96,9 +96,54 @@ class DocumentService(BaseService):
         # 返回文档列表与处理批次
         return documents, batch
 
+    def get_documents_with_page(self, dataset_id: UUID, req) -> tuple[list[Document], Paginator]:
+        """获取指定知识库的文档分页列表"""
+        # todo:等待授权认证模块完成进行切换调整
+        account_id = '46db30d1-3199-4e79-a0cd-abf12fa6858f'
+
+        dataset = self.get(Dataset, dataset_id)
+        if dataset is None or str(dataset.account_id) != account_id:
+            raise ForbiddenException("知识库不存在或无权限")
+
+        # 分页查询器
+        paginator = Paginator(self.db, req)
+        # 构建筛选器
+        filters = [
+            Document.dataset_id == dataset_id,
+            Document.account_id == account_id,
+        ]
+        if req.search_word.data:
+            filters.append(Document.name.ilike(f"%{req.search_word.data}%"))
+        documents = paginator.paginate(self.db.session.query(Document).filter(*filters).
+                                       order_by(desc("created_at")))
+        return documents, paginator
+
+    def get_document(self, dataset_id: UUID, document_id: UUID) -> Document:
+        """获取指定知识库下指定文档信息"""
+        # todo:等待授权认证模块完成进行切换调整
+        account_id = '46db30d1-3199-4e79-a0cd-abf12fa6858f'
+
+        document = self.get(Document, document_id)
+        if document is None:
+            return NotFoundException("该文档不存在")
+        if document.dataset_id != dataset_id or str(document.account_id) != account_id:
+            raise ForbiddenException("知识库不存在或无权限")
+
+        return document
+
+    def update_document_name(self, dataset_id: UUID, document_id: UUID, **kwargs) -> Document:
+        # todo:等待授权认证模块完成进行切换调整
+        account_id = '46db30d1-3199-4e79-a0cd-abf12fa6858f'
+        document = self.get(Document, document_id)
+        if document is None:
+            return NotFoundException("该文档不存在")
+        if document.dataset_id != dataset_id or str(document.account_id) != account_id:
+            raise ForbiddenException("知识库不存在或无权限")
+
+        return self.update(document, **kwargs)
+
     def get_documents_status(self, dataset_id: UUID, batch: str) -> list[dict]:
         """根据批次获取该文档处理状态"""
-
         # todo:等待授权认证模块完成进行切换调整
         account_id = '46db30d1-3199-4e79-a0cd-abf12fa6858f'
         dataset = self.get(Dataset, dataset_id)
