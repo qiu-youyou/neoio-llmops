@@ -9,17 +9,20 @@ import logging
 import random
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from injector import inject
+from redis import Redis
 from sqlalchemy import desc, asc, func
 
-from internal.entity.dataset_entity import ProcessType, SegmentStatus
+from internal.entity.cache_entity import LOCK_EXPIRE_TIME, LOCK_DOCUMENT_UPDATE_ENABLED
+from internal.entity.dataset_entity import ProcessType, SegmentStatus, DocumentStatus
 from internal.entity.upload_file_entity import ALLOWED_DOCUMENT_EXTENSION
 from internal.exception import ForbiddenException, FailException, NotFoundException
 from internal.lib.helper import datetime_to_timestamp
 from internal.model import Document, Dataset, UploadFile, ProcessRule, Segment
-from internal.task.document_task import build_documents
+from internal.task.document_task import build_documents, update_document_enabled, delete_document
 from pkg.paginator import Paginator
 from pkg.sqlalchemy import SQLAlchemy
 from .base_service import BaseService
@@ -30,6 +33,7 @@ from .base_service import BaseService
 class DocumentService(BaseService):
     """文档服务"""
     db: SQLAlchemy
+    redis_client: Redis
 
     def create_documents(self,
                          dataset_id: UUID,
@@ -91,7 +95,6 @@ class DocumentService(BaseService):
 
         # 调用异步任务，完成处理文档操作
         build_documents.delay([document.id for document in documents])
-        # self.indexing_service.build_documents([document.id for document in documents])
 
         # 返回文档列表与处理批次
         return documents, batch
@@ -125,22 +128,70 @@ class DocumentService(BaseService):
 
         document = self.get(Document, document_id)
         if document is None:
-            return NotFoundException("该文档不存在")
+            raise NotFoundException("该文档不存在")
         if document.dataset_id != dataset_id or str(document.account_id) != account_id:
             raise ForbiddenException("知识库不存在或无权限")
 
         return document
 
     def update_document_name(self, dataset_id: UUID, document_id: UUID, **kwargs) -> Document:
+        """更新指定知识库下指定文档的名称"""
         # todo:等待授权认证模块完成进行切换调整
         account_id = '46db30d1-3199-4e79-a0cd-abf12fa6858f'
         document = self.get(Document, document_id)
         if document is None:
-            return NotFoundException("该文档不存在")
+            raise NotFoundException("该文档不存在")
         if document.dataset_id != dataset_id or str(document.account_id) != account_id:
             raise ForbiddenException("知识库不存在或无权限")
 
         return self.update(document, **kwargs)
+
+    def update_document_enabled(self, dataset_id: UUID, document_id: UUID, enabled: bool) -> Document:
+        """更新指定知识库下指定文档启用状态"""
+        # todo:等待授权认证模块完成进行切换调整
+        account_id = '46db30d1-3199-4e79-a0cd-abf12fa6858f'
+        document = self.get(Document, document_id)
+        if document is None:
+            raise NotFoundException("该文档不存在")
+        if document.dataset_id != dataset_id or str(document.account_id) != account_id:
+            raise ForbiddenException("知识库不存在或无权限")
+
+        # 判断文档状态是否可修改
+        if document.status != DocumentStatus.COMPLETED:
+            raise ForbiddenException("当前文档处于不可修改状态，稍后重试。")
+        if document.enabled == enabled:
+            raise ForbiddenException(f"当前文档已是{'启用' if enabled else '禁用'}状态")
+
+        # 获取缓存检测是否上锁
+        cache_key = LOCK_DOCUMENT_UPDATE_ENABLED.format(document_id=document.id)
+        cache_value = self.redis_client.get(cache_key)
+        if cache_value is not None:
+            raise FailException("当前文档正在修改状态，请稍后重试。")
+
+        # 更新文档
+        self.update(document, enabled=enabled, disabled_at=None if enabled else datetime.now())
+        self.redis_client.setex(cache_key, LOCK_EXPIRE_TIME, 1)
+
+        # 启用异步任务完成 关键词 片段 向量等修改
+        update_document_enabled.delay(document_id)
+
+        return document
+
+    def delete_document(self, dataset_id: UUID, document_id: UUID) -> Document:
+        # todo:等待授权认证模块完成进行切换调整
+        account_id = '46db30d1-3199-4e79-a0cd-abf12fa6858f'
+        document = self.get(Document, document_id)
+        if document is None:
+            raise NotFoundException("该文档不存在")
+        if document.dataset_id != dataset_id or str(document.account_id) != account_id:
+            raise ForbiddenException("知识库不存在或无权限")
+        if document.status not in [DocumentStatus.COMPLETED, DocumentStatus.ERROR]:
+            raise FailException("当前文档处于不可删除状态，请稍后重试。")
+
+        self.delete(document)
+        # 启用异步任务完成 关键词 片段 向量等删除
+        delete_document.delay(dataset_id, document_id)
+        return document
 
     def get_documents_status(self, dataset_id: UUID, batch: str) -> list[dict]:
         """根据批次获取该文档处理状态"""

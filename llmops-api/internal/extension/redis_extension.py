@@ -21,9 +21,9 @@ def init_app(app: Flask):
         connection_class = SSLConnection
 
     # 创建连接池
-    redis_client.connection_class = redis.ConnectionPool(**{
+    redis_client.connection_pool = redis.ConnectionPool(**{
         "host": app.config.get("REDIS_HOST", "localhost"),
-        "port": app.config.get("REDIS_PORT", "6379"),
+        "port": app.config.get("REDIS_PORT", 6379),
         "username": app.config.get("REDIS_USERNAME", None),
         "password": app.config.get("REDIS_PASSWORD", None),
         "db": app.config.get("REDIS_DB", 0),

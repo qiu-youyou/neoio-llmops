@@ -94,16 +94,16 @@ class Router:
                         view_func=self.document_handler.create_documents)
         bp.add_url_rule("/datasets/<uuid:dataset_id>/documents",
                         view_func=self.document_handler.get_documents_with_page)
+        bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/batch/<string:batch>",
+                        view_func=self.document_handler.get_documents_status)
         bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>",
                         view_func=self.document_handler.get_document)
         bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/name", methods=["POST"],
                         view_func=self.document_handler.update_document_name)
-        # bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/enabled", methods=["POST"],
-        #                 view_func=self.document_handler.update_document_enabled)
-        # bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/delete", methods=["POST"],
-        #                 view_func=self.document_handler.delete_document)
-        # bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/batch/<string:batch>",
-        #                 view_func=self.document_handler.get_documents_status)
+        bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/enabled", methods=["POST"],
+                        view_func=self.document_handler.update_document_enabled)
+        bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/delete", methods=["POST"],
+                        view_func=self.document_handler.delete_document)
 
         bp.add_url_rule("/datasets/<uuid:dataset_id>/hit", methods=["POST"], view_func=self.dataset_handler.hit)
         # 在应用上注册蓝图

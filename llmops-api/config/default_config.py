@@ -18,10 +18,10 @@ DEFAULT_CONFIG = {
 
     # Redis 默认配置
     "REDIS_HOST": "localhost",
-    "REDIS_PORT": "6379",
+    "REDIS_PORT": 6379,
     "REDIS_USERNAME": "",
     "REDIS_PASSWORD": "",
-    "REDIS_DB": "0",
+    "REDIS_DB": 0,
     "REDIS_USE_SSL": "False",
 
     # Celery默认配置

@@ -79,24 +79,10 @@ class DatasetHandler:
 
     def hit(self, dataset_id: UUID):
         """召回测试"""
-        from weaviate.classes.query import Filter
-        query = "通过构建统一的知识库平台，企业可以有效减少重复劳动，提高信息利用率，并提升整体运营效率。"
-        retriever = self.vector_database_service.vector_store.as_retriever(
-            search_type="mmr",
-            search_kwargs={
-                "k": 10,
-                "filters": Filter.all_of([
-                    Filter.by_property("document_enabled").equal(True),
-                    Filter.by_property("segment_enabled").equal(True),
-                    Filter.any_of([
-                        Filter.by_property("dataset_id").equal("6b625a77-4bc9-479a-a0bd-244fc524800d"),
-                        Filter.by_property("dataset_id").equal("6b625a77-4bc9-479a-a0bd-244fc5248001"),
-                    ])
-                ])
-            }
-        )
-
+        query = ""
+        retriever = self.vector_database_service.vector_store.as_retriever(search_type="mmr")
         documents = retriever.invoke(query)
+
         return success_json(
             {"documents":
                  [{"page_content": document.page_content, "metadata": document.metadata} for document in documents]})
