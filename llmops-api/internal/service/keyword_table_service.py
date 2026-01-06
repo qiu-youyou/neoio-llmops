@@ -27,7 +27,7 @@ class KeywordTableService(BaseService):
 
     def get_keyword_table_from_dataset_id(self, dataset_id) -> KeywordTable:
         """获取知识库的 关键词表"""
-        keyword_table = self.db.session.query(KeywordTable).filter(KeywordTable.id == dataset_id).one_or_none()
+        keyword_table = self.db.session.query(KeywordTable).filter(KeywordTable.dataset_id == dataset_id).one_or_none()
         if keyword_table is None:
             keyword_table = self.create(KeywordTable, dataset_id=dataset_id, keyword_table={})
 

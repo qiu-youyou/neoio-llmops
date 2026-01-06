@@ -144,7 +144,7 @@ class IndexingService(BaseService):
             self.db.session.query(Segment).filter(Segment.document_id == document_id).delete()
 
         # 更新片段对应的关键词表记录
-        self.keyword_table_service.delete_keyword_table_from_ids(dataset_id=dataset_id, segment_ids=segment_ids)
+        self.keyword_table_service.delete_keyword_table_from_ids(dataset_id, segment_ids)
 
     def _parsing(self, document: Document) -> list[LCDocument]:
         """解析传递的文档为LangChain文档列表"""
