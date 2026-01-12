@@ -63,7 +63,6 @@ class KeywordTableService(BaseService):
         # 知识库新增关键词 上锁避免并发时拿到错误数据
         cache_key = LOCK_KEYWORD_TABLE_UPDATE_KEYWORD_TABLE.format(dataset_id=dataset_id)
         with self.redis_client.lock(cache_key, timeout=LOCK_EXPIRE_TIME):
-            """"""
             # 获取指定关键词表
             keyword_table_record = self.get_keyword_table_from_dataset_id(dataset_id)
             keyword_table = {"field": set(value) for field, value in keyword_table_record.keyword_table.items()}

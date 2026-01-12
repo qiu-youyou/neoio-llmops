@@ -101,14 +101,14 @@ class Router:
                         view_func=self.segment_handler.create_segment)
         bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/segments",
                         view_func=self.segment_handler.get_segments_with_page)
-        # bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/segments/<uuid:segment_id>",
-        #                 view_func=self.segment_handler.get_segment)
-        # bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/segments/<uuid:segment_id>",
-        #                 methods=["POST"], view_func=self.segment_handler.update_segment)
-        # bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/segments/<uuid:segment_id>/enabled",
-        #                 methods=["POST"], view_func=self.segment_handler.update_segment_enabled)
-        # bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/segments/<uuid:segment_id>/delete",
-        #                 methods=["POST"], view_func=self.segment_handler.delete_segment)
+        bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/segments/<uuid:segment_id>",
+                        view_func=self.segment_handler.get_segment)
+        bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/segments/<uuid:segment_id>",
+                        methods=["POST"], view_func=self.segment_handler.update_segment)
+        bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/segments/<uuid:segment_id>/enabled",
+                        methods=["POST"], view_func=self.segment_handler.update_segment_enabled)
+        bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/segments/<uuid:segment_id>/delete",
+                        methods=["POST"], view_func=self.segment_handler.delete_segment)
 
         # 指定知识库进行召回测试
         bp.add_url_rule("/datasets/<uuid:dataset_id>/hit", methods=["POST"], view_func=self.dataset_handler.hit)
