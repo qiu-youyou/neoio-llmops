@@ -55,8 +55,8 @@ class SegmentService(BaseService):
 
         paginate = Paginator(self.db, req=req)
         filters = [Segment.document_id == document_id]
-        if req.keywords.data:
-            filters.append(Segment.content.ilike(f"%{req.keywords.data}%"))
+        if req.search_word.data:
+            filters.append(Segment.content.ilike(f"%{req.search_word.data}%"))
 
         segments = paginate.paginate(self.db.session.query(Segment).filter(*filters).order_by(asc("position")))
         return segments, paginate
@@ -106,6 +106,7 @@ class SegmentService(BaseService):
         # 数据库新增数据位置+1
         segment = None
         try:
+            position += 1  # 位置+1
             segment = self.create(Segment, account_id=account_id,
                                   dataset_id=dataset_id,
                                   document_id=document_id,
@@ -292,7 +293,7 @@ class SegmentService(BaseService):
             self.vector_database_service.collection.data.delete_by_id(str(segment.node_id))
         except Exception as e:
             logging.exception(f"删除片段失败，segment_id:{segment_id}，错误信息：{str(e)}")
-            
+
         # 更新文档、重新计算 字符数、token数
         document_character_count, document_token_count = self.db.session.query(
             func.coalesce(func.sum(Segment.character_count), 0),

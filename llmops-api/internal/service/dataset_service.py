@@ -5,6 +5,7 @@
 @Time   :   2025/12/18 13:41
 @Author :   s.qiu@foxmail.com
 """
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -12,10 +13,13 @@ from injector import inject
 from sqlalchemy import desc
 
 from internal.entity.dataset_entity import DEFAULT_DATASET_DESCRIPTION_FORMATTER
-from internal.exception import ValidateErrorException
-from internal.model import Dataset
-from internal.schema.dataset_schema import CreateDatasetReq, UpdateDatasetReq, GetDatasetsWithPageReq
+from internal.exception import ValidateErrorException, NotFoundException, FailException
+from internal.lib.helper import datetime_to_timestamp
+from internal.model import Dataset, Segment, DatasetQuery, AppDatasetJoin
+from internal.schema.dataset_schema import CreateDatasetReq, UpdateDatasetReq, GetDatasetsWithPageReq, HitReq
 from internal.service.base_service import BaseService
+from internal.service.indexing_service import IndexingService
+from internal.service.retrieval_service import RetrievalService
 from pkg.paginator import Paginator
 from pkg.sqlalchemy import SQLAlchemy
 
@@ -25,6 +29,8 @@ from pkg.sqlalchemy import SQLAlchemy
 class DatasetService(BaseService):
     """知识库服务"""
     db: SQLAlchemy
+    retrieval_service: RetrievalService
+    indexing_service: IndexingService
 
     def create_dataset(self, req: CreateDatasetReq) -> Dataset:
         """创建知识库"""
@@ -109,3 +115,96 @@ class DatasetService(BaseService):
         )
 
         return datasets, paginator
+
+    def delete_dataset(self, dataset_id: UUID) -> Dataset:
+        """删除该知识库 涵盖知识库下所有 文档、片段、关键词表、对应向量数据库"""
+        # todo:等待授权认证模块完成进行切换调整
+        account_id = '46db30d1-3199-4e79-a0cd-abf12fa6858f'
+
+        dataset = self.get(Dataset, dataset_id)
+        if dataset is None or str(dataset.account_id) != account_id:
+            raise NotFoundException("知识库不存在")
+
+        try:
+            self.delete(dataset)
+            with self.db.auto_commit():
+                self.db.session.query(AppDatasetJoin).filter(AppDatasetJoin.dataset_id == dataset_id).delete()
+
+            # 异步任务执行后续操作
+            self.indexing_service.delete_dataset(dataset_id)
+
+        except Exception as e:
+            logging.exception(f"删除知识库失败, dataset_id: {dataset_id}, 错误信息: {str(e)}")
+            raise FailException("删除知识库失败")
+
+    def get_dataset_queries(self, dataset_id: UUID) -> list[DatasetQuery]:
+        """获取当前知识库最新查询的10条记录"""
+        # todo:等待授权认证模块完成进行切换调整
+        account_id = '46db30d1-3199-4e79-a0cd-abf12fa6858f'
+
+        datset = self.get(Dataset, dataset_id)
+        if datset is None or str(datset.account_id) != account_id:
+            raise NotFoundException("知识库不存在")
+
+        dataset_queries = self.db.session.query(DatasetQuery).filter(
+            DatasetQuery.dataset_id == dataset_id).order_by(desc("created_at")).limit(10).all()
+
+        return dataset_queries
+
+    def hit(self, dataset_id: UUID, req: HitReq) -> list[dict]:
+        """指定知识库 召回测试"""
+        # todo:等待授权认证模块完成进行切换调整
+        account_id = '46db30d1-3199-4e79-a0cd-abf12fa6858f'
+
+        # 知识库是否存在
+        dateset = self.get(Dataset, dataset_id)
+        if dateset is None or str(dateset.account_id) != account_id:
+            raise NotFoundException("知识库不存在")
+
+        # 执行检索
+        lc_documents = self.retrieval_service.search_in_datasets(dataset_ids=[dataset_id], **req.data)
+        lc_document_dict = {str(lc_document.metadata["segment_id"]): lc_document for lc_document in lc_documents}
+
+        # 根据检索数据查询对应片段信息
+        segments = self.db.session.query(Segment).filter(
+            Segment.id.in_([str(lc_document.metadata["segment_id"]) for lc_document in lc_documents])
+        ).all()
+        segment_dict = {str(segment.id): segment for segment in segments}
+
+        # 片段数据排序
+        sorted_segments = [
+            segment_dict[str(lc_document.metadata["segment_id"])]
+            for lc_document in lc_documents
+            if str(lc_document.metadata["segment_id"]) in segment_dict
+        ]
+
+        # 组装数据
+        hit_result = []
+        for segment in sorted_segments:
+            document = segment.document
+            upload_file = document.upload_file
+            hit_result.append({
+                "id": segment.id,
+                "document": {
+                    "id": document.id,
+                    "name": document.name,
+                    "extension": upload_file.extension,
+                    "mime_type": upload_file.mime_type,
+                },
+                "dataset_id": segment.dataset_id,
+                "score": lc_document_dict[str(segment.id)].metadata["score"],
+                "position": segment.position,
+                "content": segment.content,
+                "keywords": segment.keywords,
+                "character_count": segment.character_count,
+                "token_count": segment.token_count,
+                "hit_count": segment.hit_count,
+                "enabled": segment.enabled,
+                "disabled_at": datetime_to_timestamp(segment.disabled_at),
+                "status": segment.status,
+                "error": segment.error,
+                "updated_at": datetime_to_timestamp(segment.updated_at),
+                "created_at": datetime_to_timestamp(segment.created_at),
+            })
+
+        return hit_result

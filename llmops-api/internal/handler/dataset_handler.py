@@ -14,10 +14,8 @@ from injector import inject
 
 from internal.core.file_extractor import FileExtractor
 from internal.schema.dataset_schema import CreateDatasetReq, UpdateDatasetReq, GetDatasetResp, GetDatasetsWithPageReq, \
-    GetDatasetsWithPageResp
-from internal.service import DatasetService
-from internal.service import JiebaService
-from internal.service import VectorDatabaseService
+    GetDatasetsWithPageResp, HitReq, GetDatasetQueriesResp
+from internal.service import DatasetService, JiebaService, VectorDatabaseService
 from pkg.paginator import PageModel
 from pkg.response import success_message, validate_error_json, success_json
 from pkg.sqlalchemy import SQLAlchemy
@@ -27,11 +25,11 @@ from pkg.sqlalchemy import SQLAlchemy
 @dataclass
 class DatasetHandler:
     """知识库处理器"""
+    db: SQLAlchemy
     file_extractor: FileExtractor
     dataset_service: DatasetService
     vector_database_service: VectorDatabaseService
     jieba_service: JiebaService
-    db: SQLAlchemy
 
     def create_dataset(self):
         """创建知识库"""
@@ -66,6 +64,17 @@ class DatasetHandler:
 
         return success_json(PageModel(list=resp.dump(datasets), paginator=paginator))
 
+    def get_dataset_queries(self, dataset_id: UUID):
+        """"根据传递的知识库获取最近10条查询记录"""
+        dataset_queries = self.dataset_service.get_dataset_queries(dataset_id)
+        resp = GetDatasetQueriesResp(many=True)
+        return success_json(resp.dump(dataset_queries))
+
+    def delete_dataset(self, dataset_id: UUID):
+        """删除知识库"""
+        self.dataset_service.delete_dataset(dataset_id)
+        return success_message("删除成功")
+
     def embeddings_query(self):
         """测试 embedding"""
         query = request.args.get("query")
@@ -78,11 +87,12 @@ class DatasetHandler:
         # return success_json({"embeddings": content})
 
     def hit(self, dataset_id: UUID):
-        """召回测试"""
-        query = ""
-        retriever = self.vector_database_service.vector_store.as_retriever(search_type="mmr")
-        documents = retriever.invoke(query)
+        """指定知识库 召回测试"""
+        req = HitReq()
+        if not req.validate():
+            return validate_error_json(req.errors)
 
-        return success_json(
-            {"documents":
-                 [{"page_content": document.page_content, "metadata": document.metadata} for document in documents]})
+        # 2.调用服务执行检索策略
+        hit_result = self.dataset_service.hit(dataset_id, req)
+
+        return success_json(hit_result)

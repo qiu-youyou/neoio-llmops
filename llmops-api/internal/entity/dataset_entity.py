@@ -35,6 +35,19 @@ class SegmentStatus(str, Enum):
     ERROR = "error"
 
 
+class RetrievalStrategy(str, Enum):
+    """检索策略类型枚举"""
+    FULL_TEXT = "full_text"
+    SEMANTIC = "semantic"
+    HYBRID = "hybrid"
+
+
+class RetrievalSource(str, Enum):
+    """检索来源"""
+    HIT_TESTING = "hit_testing"
+    APP = "app"
+
+
 # 默认的处理规则
 DEFAULT_PROCESS_RULE = {
     "mode": "custom",
