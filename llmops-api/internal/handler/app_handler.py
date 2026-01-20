@@ -5,24 +5,31 @@
 @Time   :   2025/9/1 11:46
 @Author :   s.qiu@foxmail.com
 """
+import json
 from dataclasses import dataclass
 from operator import itemgetter
-from typing import Dict, Any
-from uuid import UUID
+from queue import Queue
+from threading import Thread
+from typing import Dict, Any, Literal, Generator
+from uuid import UUID, uuid4
 
 from injector import inject
 from langchain_classic.base_memory import BaseMemory
 from langchain_classic.memory import ConversationBufferWindowMemory
 from langchain_community.chat_message_histories import FileChatMessageHistory
+from langchain_core.messages import ToolMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableConfig, RunnablePassthrough, RunnableLambda
 from langchain_core.tracers import Run
 from langchain_openai import ChatOpenAI
+from langgraph.constants import END
+from langgraph.graph import MessagesState, StateGraph
 
+from internal.core.tools.builtin_tools.providers import BuiltinProviderManager
 from internal.schema.app_schema import CompletionReq
 from internal.service import AppService, VectorDatabaseService
-from pkg.response import validate_error_json, success_json, success_message
+from pkg.response import validate_error_json, success_json, success_message, compact_generate_response
 
 
 @inject
@@ -31,6 +38,7 @@ class AppHandler:
     """应用控制器"""
     app_service: AppService
     vector_database_service: VectorDatabaseService
+    builtin_provider_manager: BuiltinProviderManager
 
     def get_app(self, id: UUID):
         """查询APP记录"""
@@ -53,6 +61,115 @@ class AppHandler:
         return success_message(f"应用删除成功, id 为 {app.id}", )
 
     def debug(self, app_id: UUID):
+        """聊天调试接口"""
+        req = CompletionReq()
+        if not req.validate():
+            return validate_error_json(req.errors)
+
+        # 创建队列
+        q = Queue()
+        query = req.query.data
+
+        # 创建 graph 图程序
+        def graph_app() -> None:
+            # 创建 tools 工具列表
+            tools = [
+                self.builtin_provider_manager.get_tool("google", "google_serper")(),
+                self.builtin_provider_manager.get_tool("gaode", "gaode_weather")(),
+                self.builtin_provider_manager.get_tool("dalle", "dalle3")(),
+            ]
+
+            # 创建聊天、工具、路由节点
+
+            def chatbot(state: MessagesState) -> MessagesState:
+                """聊天对话节点"""
+                llm = ChatOpenAI(model="kimi-k2-0905-preview", temperature=0.7).bind_tools(tools)
+
+                # 获取流式输出内容
+                is_first_chunk = True  # 是否是第一个块
+                is_tool_call = False  # 是否是工具调用
+                gathered = None
+                gid = str(uuid4())
+                for chunk in llm.stream(state["messages"]):
+                    # 一般第一个块不会生成内容 需要抛弃
+                    if is_first_chunk and chunk.content == "" and not chunk.tool_calls:
+                        continue
+                    # 叠加相应区块
+                    if is_first_chunk:
+                        gathered = chunk
+                        is_first_chunk = False
+                    else:
+                        gathered += chunk
+
+                    # 判断是工具调用还是文本生成，在队列中添加不同数据
+                    if chunk.tool_calls or is_tool_call:
+                        is_tool_call = True
+                        q.put({"id": gid, "event": "agent_thought", "data": json.dumps(chunk.tool_call_chunks)})
+                    else:
+                        q.put({"id": gid, "event": "agent_message", "data": chunk.content})
+
+                return {"messages": [gathered]}
+
+            def tool_executor(state: MessagesState) -> MessagesState:
+                """工具/函数节点"""
+                # 提取数据中的 tool_calls
+                tool_calls = state["messages"][-1].tool_calls
+                # 工具列表转换为字典
+                tools_by_name = {tool.name: tool for tool in tools}
+
+                # 执行工具函数获取结果
+                message = []
+                for tool_call in tool_calls:
+                    tid = str(uuid4())
+                    tool = tools_by_name[tool_call["name"]]
+                    tool_result = tool.invoke(tool_call["args"])
+                    message.append(ToolMessage(
+                        tool_call_id=tid,
+                        content=json.dumps(tool_result),
+                        tool_name=tool_call["name"],
+                    ))
+                    q.put({"id": tid, "event": "agent_action", "data": json.dumps(tool_result)})
+
+                return {"messages": message}
+
+            def route(state: MessagesState) -> Literal["tool_executor", "__end__"]:
+                """路由节点 用于确认下一步"""
+                ai_message = state["messages"][-1]
+                if hasattr(ai_message, "tool_calls") and len(ai_message.tool_calls) > 0:
+                    return "tool_executor"
+                return END
+
+            # 创建状态图
+            graph_builder = StateGraph(MessagesState)
+            # 添加节点
+            graph_builder.add_node("llm", chatbot)
+            graph_builder.add_node("tool_executor", tool_executor)
+            # 添加边
+            graph_builder.set_entry_point("llm")
+            graph_builder.add_conditional_edges("llm", route)
+            graph_builder.add_edge("tool_executor", "llm")
+
+            graph = graph_builder.compile()
+
+            result = graph.invoke({"messages": [("human", query)]})
+            q.put(None)
+
+        def stream_event_response() -> Generator:
+            """流式输出事件"""
+            while True:
+                item = q.get()
+                if item is None:
+                    break
+                yield f"event: {item.get('event')}\ndata: {json.dumps(item)}\n\n"
+                q.task_done()
+
+        t = Thread(target=graph_app)
+        t.start()
+
+        return compact_generate_response(stream_event_response())
+
+    def _debug(self, app_id: UUID):
+        """聊天接口"""
         # 校验接口参数
         req = CompletionReq()
         if not req.validate():
