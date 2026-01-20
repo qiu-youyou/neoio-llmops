@@ -33,8 +33,6 @@ class Router:
         bp = Blueprint("llmops", __name__, url_prefix="")
 
         # 将 URL 与对应的控制器方法绑定
-        bp.add_url_rule("/test", methods=["POST"], view_func=self.app_handle.test)
-        bp.add_url_rule("/datasets/embeddings", view_func=self.dataset_handler.embeddings_query)
 
         # 对话接口测试
         bp.add_url_rule("/apps/<uuid:app_id>/debug", methods=["POST"], view_func=self.app_handle.debug)

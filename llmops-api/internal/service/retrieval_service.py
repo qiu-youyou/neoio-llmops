@@ -75,9 +75,8 @@ class RetrievalService(BaseService):
             lc_documents = full_text_retriever.invoke(query)[:k]
         else:
             lc_documents = hybrid_retriever.invoke(query)[:k]
-
         # 知识库查询记录 存储唯一记录
-        unique_dataset_ids = list(set(str(lc_document.metadata["dataset_id"])) for lc_document in lc_documents)
+        unique_dataset_ids = list(set(str(lc_document.metadata["dataset_id"]) for lc_document in lc_documents))
         for dataset_id in unique_dataset_ids:
             self.create(
                 DatasetQuery,

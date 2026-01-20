@@ -9,7 +9,6 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from flask import request
 from injector import inject
 
 from internal.core.file_extractor import FileExtractor
@@ -75,24 +74,11 @@ class DatasetHandler:
         self.dataset_service.delete_dataset(dataset_id)
         return success_message("删除成功")
 
-    def embeddings_query(self):
-        """测试 embedding"""
-        query = request.args.get("query")
-        keywords = self.jieba_service.extract_keywords(query)
-        return success_json({"keywords": keywords})
-        # upload_file = self.db.session.query(UploadFile).get("a7576caa-4474-403e-9cb3-800e42501e89")
-        # content = self.file_extractor.load(upload_file, return_text=True)
-        return success_json({"content": content})
-        # content = self.embeddings_service.embeddings.embed_query(query)
-        # return success_json({"embeddings": content})
-
     def hit(self, dataset_id: UUID):
         """指定知识库 召回测试"""
         req = HitReq()
         if not req.validate():
             return validate_error_json(req.errors)
-
-        # 2.调用服务执行检索策略
+        # 调用服务执行检索策略
         hit_result = self.dataset_service.hit(dataset_id, req)
-
         return success_json(hit_result)

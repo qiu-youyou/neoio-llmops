@@ -108,7 +108,3 @@ class AppHandler:
         if configurable_memory is not None and isinstance(configurable_memory, BaseMemory):
             return configurable_memory.load_memory_variables(input)
         return {"history": []}
-
-    def test(self):
-        return success_json({})
-        # raise ForbiddenException("无权限")
