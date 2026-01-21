@@ -8,6 +8,7 @@
 import os
 
 from flask import Flask
+from flask_cors import CORS
 from flask_migrate import Migrate
 
 from config import Config
@@ -46,6 +47,16 @@ class Http(Flask):
         redis_extension.init_app(self)
         celery_extension.init_app(self)
         logging_extension.init_app(self)
+
+        # 处理跨域
+        CORS(self, resources={
+            r"/*": {
+                "origins": "*",
+                "supports_credentials": True,
+                # "methods": ["GET", "POST"],
+                # "allow_headers": ["Content-Type"],
+            }
+        })
 
         # 注册路由
         router.register_router(self)
