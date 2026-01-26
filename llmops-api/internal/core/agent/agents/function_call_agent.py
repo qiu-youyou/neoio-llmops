@@ -10,6 +10,7 @@ import json
 from typing import Literal
 
 from langchain_core.messages import AnyMessage, HumanMessage, SystemMessage, RemoveMessage, ToolMessage
+from langgraph.constants import END
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
@@ -27,30 +28,28 @@ class FunctionCallAgent(BaseAgent):
             history = []
 
         agent = self._build_graph()
+        # 直接调用 invoke
+        result = agent.invoke({
+            "messages": [HumanMessage(content=query)],
+            "history": history,
+            "long_term_memory": long_term_memory,
+        })
 
-        # thread = Thread(
-        #     target=agent.invoke,
-        #     args=({
-        #         "messages": [HumanMessage(content=query)],
-        #         "history": history,
-        #         "long_term_memory": long_term_memory,
-        #     })
-        # )
-        #
-        # thread.start()
+        # 返回结果
+        return result
 
     def _build_graph(self) -> CompiledStateGraph:
         """LANGRAPH 图程序构建"""
 
         # 创建图 创建节点
         graph = StateGraph(AgentState)
-        graph.add_node("_long_term_memory_recall", self._long_term_memory_recall_node)
+        graph.add_node("long_term_memory_recall", self._long_term_memory_recall_node)
         graph.add_node("llm", self._llm_node)
         graph.add_node("tools", self._tools_node)
 
         # 起点、终点、条件变
-        graph.set_entry_point("_long_term_memory_recall")
-        graph.add_edge("_long_term_memory_recall", "llm")
+        graph.set_entry_point("long_term_memory_recall")
+        graph.add_edge("long_term_memory_recall", "llm")
         graph.add_conditional_edges("llm", self._tools_condition)
         graph.add_edge("tools", 'llm')
 
@@ -83,7 +82,7 @@ class FunctionCallAgent(BaseAgent):
 
         # 将 query 当前提问 进行拼接
         human_message = state["messages"][-1]
-        preset_prompt.append(HumanMessage(content=human_message))
+        preset_prompt.append(HumanMessage(content=human_message.content))
 
         return {"messages": [RemoveMessage(id=human_message.id), *preset_prompt]}
 
@@ -94,7 +93,7 @@ class FunctionCallAgent(BaseAgent):
         llm = self.agent_config.llm
 
         # llm是否支持绑定工具 是否有可以绑定的工具
-        if hasattr(llm, "bind_tools") and callable(getattr(llm, "bind_tools")) and len(self.agent_config.tools > 0):
+        if hasattr(llm, "bind_tools") and callable(getattr(llm, "bind_tools")) and len(self.agent_config.tools) > 0:
             llm = llm.bind_tools(self.agent_config.tools)
 
         # 流式调用模型 获取内容
@@ -139,4 +138,4 @@ class FunctionCallAgent(BaseAgent):
         # AI消息中如果存在 tools_calls 执行 tool 节点 反之表示结束
         if hasattr(ai_message, "tool_calls") and len(ai_message.tool_calls) > 0:
             return "tools"
-        return "END"
+        return END
