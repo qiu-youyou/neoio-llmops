@@ -9,6 +9,7 @@ import os
 
 from flask import Flask
 from flask_cors import CORS
+from flask_login import LoginManager
 from flask_migrate import Migrate
 
 from config import Config
@@ -16,6 +17,7 @@ from internal.exception import CustomException
 from internal.extension import celery_extension
 from internal.extension import logging_extension
 from internal.extension import redis_extension
+from internal.middleware import Middleware
 from internal.router import Router
 from pkg.response import json, Response, fail_message
 from pkg.sqlalchemy import SQLAlchemy
@@ -31,6 +33,8 @@ class Http(Flask):
             router: Router,
             db: SQLAlchemy,
             migrate: Migrate,
+            login_manager: LoginManager,
+            middleware: Middleware,
             **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -44,9 +48,13 @@ class Http(Flask):
         # 初始化扩展
         db.init_app(self)
         migrate.init_app(self, db, "internal/migrations")
+        login_manager.init_app(self)
         redis_extension.init_app(self)
         celery_extension.init_app(self)
         logging_extension.init_app(self)
+
+        # 注册中间件
+        login_manager.request_loader(middleware.request_loader)
 
         # 处理跨域
         CORS(self, resources={

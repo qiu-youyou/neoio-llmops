@@ -108,8 +108,8 @@ class Router:
                         view_func=self.segment_handler.get_segments_with_page)
         bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/segments/<uuid:segment_id>",
                         view_func=self.segment_handler.get_segment)
-
         # 指定知识库进行召回测试
         bp.add_url_rule("/datasets/<uuid:dataset_id>/hit", methods=["POST"], view_func=self.dataset_handler.hit)
+        
         # 在应用上注册蓝图
         app.register_blueprint(bp)

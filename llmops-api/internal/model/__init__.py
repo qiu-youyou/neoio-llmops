@@ -5,6 +5,7 @@
 @Time   :   2025/8/20 20:26
 @Author :   s.qiu@foxmail.com
 """
+from .acount import Account, AccountOAuth
 from .api_tool import ApiTool, ApiToolProvider
 from .app import App, AppDatasetJoin
 from .conversation import Conversation, Message, MessageAgentThought
@@ -12,6 +13,7 @@ from .dataset import Dataset, Document, Segment, KeywordTable, DatasetQuery, Pro
 from .upload_file import UploadFile
 
 __all__ = [
+    "Account", "AccountOAuth",
     "App", "AppDatasetJoin",
     "ApiTool", "ApiToolProvider",
     "Dataset", "Document", "Segment", "KeywordTable", "DatasetQuery", "ProcessRule",
