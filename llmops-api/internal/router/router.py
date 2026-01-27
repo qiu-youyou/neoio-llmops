@@ -38,6 +38,13 @@ class Router:
         bp.add_url_rule("/ping", view_func=self.app_handler.ping)
         bp.add_url_rule("/apps/<uuid:app_id>/debug", methods=["POST"], view_func=self.app_handler.debug)
 
+        # 授权认证
+        # bp.add_url_rule("/oauth/<string:provider_name>", view_func=self.oauth_handler.provider)
+        # bp.add_url_rule("/oauth/authorize/<string:provider_name>", methods=["POST"],
+        #                 view_func=self.oauth_handler.authorize)
+        # bp.add_url_rule("/auth/password-login", methods=["POST"], view_func=self.auth_handler.password_login)
+        # bp.add_url_rule("/auth/logout", methods=["POST"], view_func=self.auth_handler.logout)
+        
         # 应用管理 模块
         bp.add_url_rule("/app", methods=["POST"], view_func=self.app_handler.create_app)
         bp.add_url_rule("/app/<uuid:id>/delete", methods=["POST"], view_func=self.app_handler.delete_app)
@@ -110,6 +117,6 @@ class Router:
                         view_func=self.segment_handler.get_segment)
         # 指定知识库进行召回测试
         bp.add_url_rule("/datasets/<uuid:dataset_id>/hit", methods=["POST"], view_func=self.dataset_handler.hit)
-        
+
         # 在应用上注册蓝图
         app.register_blueprint(bp)
