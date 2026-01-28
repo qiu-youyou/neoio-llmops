@@ -34,4 +34,6 @@ class OAuthHandler:
         if not req.validate():
             raise validate_error_json(req.errors)
         credential = self.oauth_service.oauth_login(provider_name, req.code.data)
-        return success_json(AuthorizeResp().dump(credential))
+
+        resp = AuthorizeResp()
+        return success_json(resp.dump(credential))

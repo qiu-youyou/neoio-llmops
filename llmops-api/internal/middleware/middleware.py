@@ -30,10 +30,10 @@ class Middleware:
             auth_header = request.headers.get("Authorization")
             # 请求头中没有 Authorization
             if not auth_header:
-                raise UnauthorizedException("无权限访问，请登录后重试")
+                raise UnauthorizedException("缺少TOKEN，请登录后重试")
             # 没有空格分隔符 Authorization: Bearer access_token
             if " " not in auth_header:
-                raise UnauthorizedException("无权限访问，请登录后重试")
+                raise UnauthorizedException("TOKEN格式错误，请登录后重试")
 
             # 按空格分隔 必须符合 Bearer access_token
             auth_schema, access_token = auth_header.split(None, 1)

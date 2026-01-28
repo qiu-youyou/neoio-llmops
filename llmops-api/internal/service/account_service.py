@@ -27,6 +27,11 @@ class AccountService(BaseService):
         """获取指定账号信息"""
         return self.get(Account, account_id)
 
+    def get_account_by_email(self, email: str) -> Account:
+        """根据邮箱获取账号信息"""
+        account = self.db.session.query(Account).filter(Account.email == email).one_or_none()
+        return account
+
     def get_account_oauth_by_provider_name_and_openid(self, provider_name: str, openid: str) -> AccountOAuth:
         """根据第三方名称+OPENID获取授权记录"""
         account_oauth = self.db.session.query(AccountOAuth).filter(
@@ -35,7 +40,7 @@ class AccountService(BaseService):
         ).one_or_none()
         return account_oauth
 
-    def get_account_by_email(self, email: str) -> Account:
-        """根据邮箱获取账号信息"""
-        account = self.db.session.query(Account).filter(Account.email == email).one_or_none()
+    def create_account(self, **kwargs) -> Account:
+        """创建账号信息"""
+        account = self.create(Account, **kwargs)
         return account

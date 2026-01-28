@@ -31,7 +31,7 @@ class GithubOAuth(OAuth):
         }
         return f"{self._AUTHORIZE_URL}?{urllib.parse.urlencode(params)}"
 
-    def get_access_token_url(self, code: str) -> str:
+    def get_access_token(self, code: str) -> str:
         """根据传入的code获取授权令牌"""
         data = {
             "client_id": self.client_id,
