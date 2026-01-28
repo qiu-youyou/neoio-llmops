@@ -12,13 +12,16 @@ from injector import inject
 
 from internal.handler import (
     AppHandler, BuiltinToolHandler, ApiToolHandler, UploadFileHandler,
-    DatasetHandler, DocumentHandler, SegmentHandler, OAuthHandler, AuthHandler)
+    DatasetHandler, DocumentHandler, SegmentHandler, OAuthHandler, AuthHandler, AccountHandler)
 
 
 @inject
 @dataclass
 class Router:
     """路由"""
+    auth_handler: AuthHandler
+    oauth_handler: OAuthHandler
+    account_handler: AccountHandler
     app_handler: AppHandler
     builtin_tool_handler: BuiltinToolHandler
     api_tool_handler: ApiToolHandler
@@ -26,8 +29,6 @@ class Router:
     dataset_handler: DatasetHandler
     document_handler: DocumentHandler
     segment_handler: SegmentHandler
-    oauth_handler: OAuthHandler
-    auth_handler: AuthHandler
 
     def register_router(self, app: Flask):
         """注册路由"""
@@ -46,6 +47,12 @@ class Router:
                         view_func=self.oauth_handler.authorize)
         bp.add_url_rule("/auth/password-login", methods=["POST"], view_func=self.auth_handler.password_login)
         bp.add_url_rule("/auth/logout", methods=["POST"], view_func=self.auth_handler.logout)
+
+        # 账号管理 模块
+        bp.add_url_rule("/account", view_func=self.account_handler.get_current_user)
+        bp.add_url_rule("/account/password", methods=["POST"], view_func=self.account_handler.update_password)
+        bp.add_url_rule("/account/name", methods=["POST"], view_func=self.account_handler.update_name)
+        bp.add_url_rule("/account/avatar", methods=["POST"], view_func=self.account_handler.update_avatar)
 
         # 应用管理 模块
         bp.add_url_rule("/app", methods=["POST"], view_func=self.app_handler.create_app)

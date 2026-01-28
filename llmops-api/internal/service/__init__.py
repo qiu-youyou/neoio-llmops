@@ -28,8 +28,6 @@ from .vector_database_service import VectorDatabaseService
 __all__ = [
     "JWTService",
     "OAuthService",
-    "ApiToolService",
-    "AppService",
     "AccountService",
     "BaseService",
     "AppService",
