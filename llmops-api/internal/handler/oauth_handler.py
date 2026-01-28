@@ -18,7 +18,7 @@ from pkg.response import success_json, validate_error_json
 @inject
 @dataclass
 class OAuthHandler:
-    """第三方授权认证"""
+    """第三方授权认证处理器"""
 
     oauth_service: OAuthService
 

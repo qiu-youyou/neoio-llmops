@@ -189,8 +189,6 @@ class ApiToolService(BaseService):
             raise NotFoundException("该工具不存在")
 
         # 查询该工具的提供者
-        api_tool_provider = self.get(ApiToolProvider, provider_id)
-        api_tool.provider = api_tool_provider
         return api_tool
 
     def api_tool_invoke(self):

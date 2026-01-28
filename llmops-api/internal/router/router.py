@@ -12,7 +12,7 @@ from injector import inject
 
 from internal.handler import (
     AppHandler, BuiltinToolHandler, ApiToolHandler, UploadFileHandler,
-    DatasetHandler, DocumentHandler, SegmentHandler, OAuthHandler)
+    DatasetHandler, DocumentHandler, SegmentHandler, OAuthHandler, AuthHandler)
 
 
 @inject
@@ -27,6 +27,7 @@ class Router:
     document_handler: DocumentHandler
     segment_handler: SegmentHandler
     oauth_handler: OAuthHandler
+    auth_handler: AuthHandler
 
     def register_router(self, app: Flask):
         """注册路由"""
@@ -43,8 +44,8 @@ class Router:
         bp.add_url_rule("/oauth/<string:provider_name>", view_func=self.oauth_handler.provider)
         bp.add_url_rule("/oauth/authorize/<string:provider_name>", methods=["POST"],
                         view_func=self.oauth_handler.authorize)
-        # bp.add_url_rule("/auth/password-login", methods=["POST"], view_func=self.auth_handler.password_login)
-        # bp.add_url_rule("/auth/logout", methods=["POST"], view_func=self.auth_handler.logout)
+        bp.add_url_rule("/auth/password-login", methods=["POST"], view_func=self.auth_handler.password_login)
+        bp.add_url_rule("/auth/logout", methods=["POST"], view_func=self.auth_handler.logout)
 
         # 应用管理 模块
         bp.add_url_rule("/app", methods=["POST"], view_func=self.app_handler.create_app)

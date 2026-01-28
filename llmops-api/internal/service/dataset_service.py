@@ -15,7 +15,7 @@ from sqlalchemy import desc
 from internal.entity.dataset_entity import DEFAULT_DATASET_DESCRIPTION_FORMATTER
 from internal.exception import ValidateErrorException, NotFoundException, FailException
 from internal.lib.helper import datetime_to_timestamp
-from internal.model import Dataset, Segment, DatasetQuery, AppDatasetJoin
+from internal.model import Dataset, Segment, DatasetQuery, AppDatasetJoin, Account
 from internal.schema.dataset_schema import CreateDatasetReq, UpdateDatasetReq, GetDatasetsWithPageReq, HitReq
 from internal.service.base_service import BaseService
 from internal.service.indexing_service import IndexingService
@@ -87,16 +87,11 @@ class DatasetService(BaseService):
                     description=req.description.data)
         return dataset
 
-    def get_dataset(self, dataset_id: UUID) -> Dataset:
+    def get_dataset(self, dataset_id: UUID, account: Account) -> Dataset:
         """获取指定知识库信息"""
-        # todo:等待授权认证模块完成进行切换调整
-        account_id = '46db30d1-3199-4e79-a0cd-abf12fa6858f'
-
-        # 该数据是否存在
         dataset = self.get(Dataset, dataset_id)
-        if dataset is None or str(dataset.account_id) != account_id:
+        if dataset is None or dataset.account_id != account.id:
             raise ValidateErrorException("该知识库不存在")
-
         return dataset
 
     def get_datasets_with_page(self, req: GetDatasetsWithPageReq) -> tuple[list[Dataset], Paginator]:

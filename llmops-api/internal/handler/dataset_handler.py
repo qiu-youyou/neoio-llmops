@@ -9,7 +9,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from flask_login import login_required
+from flask_login import login_required, current_user
 from injector import inject
 
 from internal.core.file_extractor import FileExtractor
@@ -39,9 +39,10 @@ class DatasetHandler:
         self.dataset_service.create_dataset(req)
         return success_message("知识库创建成功")
 
+    @login_required
     def get_dataset(self, dataset_id: UUID):
         """根据知识库id获取详情"""
-        dataset = self.dataset_service.get_dataset(dataset_id)
+        dataset = self.dataset_service.get_dataset(dataset_id, current_user)
         resp = GetDatasetResp()
         return success_json(resp.dump(dataset))
 
@@ -62,7 +63,6 @@ class DatasetHandler:
         datasets, paginator = self.dataset_service.get_datasets_with_page(req)
 
         resp = GetDatasetsWithPageResp(many=True)
-
         return success_json(PageModel(list=resp.dump(datasets), paginator=paginator))
 
     def get_dataset_queries(self, dataset_id: UUID):
