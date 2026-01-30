@@ -9,6 +9,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
+from flask import request
 from flask_login import login_required, current_user
 from injector import inject
 
@@ -28,7 +29,7 @@ class SegmentHandler:
     @login_required
     def get_segments_with_page(self, dataset_id: UUID, document_id: UUID):
         """获取指定知识库文档的片段列表"""
-        req = GetSegmentsWithPageReq()
+        req = GetSegmentsWithPageReq(request.args)
         if not req.validate():
             return validate_error_json(req.errors)
 

@@ -9,6 +9,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
+from flask import request
 from flask_login import login_required, current_user
 from injector import inject
 
@@ -59,7 +60,7 @@ class DatasetHandler:
     @login_required
     def get_datasets_with_page(self):
         """获取知识库分页+搜索列表数据"""
-        req = GetDatasetsWithPageReq()
+        req = GetDatasetsWithPageReq(request.args)
         if not req.validate():
             return validate_error_json(req.errors)
         datasets, paginator = self.dataset_service.get_datasets_with_page(req, current_user)

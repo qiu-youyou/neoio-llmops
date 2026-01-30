@@ -60,7 +60,7 @@ class DatasetService(BaseService):
         # 该数据是否存在
         dataset = self.get(Dataset, dataset_id)
         if dataset is None or dataset.account_id != account.id:
-            raise ValidateErrorException("该知识库不存在")
+            raise NotFoundException("该知识库不存在")
 
         # 该账号下是否有同名的知识库
         check_dataset = self.db.session.query(Dataset).filter(
@@ -86,22 +86,21 @@ class DatasetService(BaseService):
         """获取指定知识库信息"""
         dataset = self.get(Dataset, dataset_id)
         if dataset is None or dataset.account_id != account.id:
-            raise ValidateErrorException("该知识库不存在")
+            raise NotFoundException("该知识库不存在")
         return dataset
 
     def get_datasets_with_page(self, req: GetDatasetsWithPageReq, account: Account) -> tuple[list[Dataset], Paginator]:
         """获取知识库分页列表数据"""
 
         # 构建筛选器 分页查询器
-        paginator = Paginator(db=self.db, req=req)
         filters = [Dataset.account_id == account.id]
         if req.search_word.data:
             filters.append(Dataset.name.ilike(f"%{req.search_word.data}%"))
 
+        paginator = Paginator(self.db, req)
         datasets = paginator.paginate(
             self.db.session.query(Dataset).filter(*filters).order_by(desc("created_at")),
         )
-
         return datasets, paginator
 
     def delete_dataset(self, dataset_id: UUID, account: Account) -> Dataset:

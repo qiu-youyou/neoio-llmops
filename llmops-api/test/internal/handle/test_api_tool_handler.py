@@ -91,7 +91,6 @@ class TestApiToolHandler:
         provider_id = "a9bff90b-f75f-4386-9e8f-f92b6a9ad5bb"
         resp = client.post(f"/api-tools/{provider_id}/delete")
         assert resp.status_code == 200
-        print(resp.json)
         assert resp.json.get("code") == HttpCode.SUCCESS
 
         from internal.model import ApiToolProvider
