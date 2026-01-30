@@ -23,29 +23,26 @@ class AppService(BaseService):
     """应用 服务"""
     db: SQLAlchemy
 
-    def get_app(self, id: uuid.UUID) -> App:
-        # 查询
-        app = self.db.session.query(App).get(id)
+    def create_app(self, account: Account) -> App:
+        with self.db.auto_commit():
+            app = App(name="测试机器人", account_id=account.id, icon="", description="这是一个简单的聊天机器人")
+            self.db.session.add(app)
         return app
 
-    def create_app(self, account: Account) -> App:
-        # 创建
-        app = self.create(App, account_id=account.id, name="测试机器人", description="这是一个简单的聊天机器人",
-                          icon="")
+    def get_app(self, id: uuid.UUID) -> App:
+        app = self.db.session.query(App).get(id)
+        if not app:
+            raise NotFoundException("该应用不存在")
         return app
 
     def update_app(self, id: uuid.UUID) -> App:
-        # 更新
         with self.db.auto_commit():
             app = self.get_app(id)
-            app.name = "Youyou机器人"
+            app.name = "慕课聊天机器人"
         return app
 
     def delete_app(self, id: uuid.UUID) -> App:
-        # 删除
         with self.db.auto_commit():
             app = self.get_app(id)
-            if app is None:
-                raise NotFoundException("应用不存在")
             self.db.session.delete(app)
         return app

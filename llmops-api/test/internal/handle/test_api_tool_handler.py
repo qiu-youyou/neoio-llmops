@@ -16,15 +16,6 @@ test_schema_string = "{\"description\":\"这是一个查询对应英文单词字
 class TestApiToolHandler:
     """自定义工具处理器测试类"""
 
-    @pytest.mark.parametrize("openapi_schema", ["123", test_schema_string])
-    def test_validate_openapi_schema(self, openapi_schema, client):
-        resp = client.post("/api-tools/validate-openapi-schema", json={"openapi_schema": openapi_schema})
-        assert resp.status_code == 200
-        if openapi_schema == "123":
-            assert resp.json.get("code") == HttpCode.VALIDATE_ERROR
-        elif openapi_schema == test_schema_string:
-            assert resp.json.get("code") == HttpCode.SUCCESS
-
     @pytest.mark.parametrize("query", [
         {},
         {"current_page": 2},
@@ -42,30 +33,6 @@ class TestApiToolHandler:
             assert len(resp.json.get("data").get("list")) == 0
         else:
             assert resp.json.get("code") == HttpCode.SUCCESS
-
-    @pytest.mark.parametrize("provider_id", [
-        "a9bff90b-f75f-4386-9e8f-f92b6a9ad5bb",
-        "a9bff90b-f75f-4386-9e8f-f92b6a9ad5bc"
-    ])
-    def test_get_api_tool_provider(self, provider_id, client):
-        resp = client.get(f"/api-tools/{provider_id}")
-        assert resp.status_code == 200
-        if provider_id.endswith("b"):
-            assert resp.json.get("code") == HttpCode.SUCCESS
-        elif provider_id.endswith("c"):
-            assert resp.json.get("code") == HttpCode.NOT_FOUND
-
-    @pytest.mark.parametrize("provider_id, tool_name", [
-        ("a9bff90b-f75f-4386-9e8f-f92b6a9ad5bb", "YoudaoSuggest"),
-        ("a9bff90b-f75f-4386-9e8f-f92b6a9ad5bb", "YoudaoSuggestABC")
-    ])
-    def test_get_api_tool(self, provider_id, tool_name, client):
-        resp = client.get(f"/api-tools/{provider_id}/tools/{tool_name}")
-        assert resp.status_code == 200
-        if tool_name == "YoudaoSuggest":
-            assert resp.json.get("code") == HttpCode.SUCCESS
-        elif tool_name == "YoudaoSuggestABC":
-            assert resp.json.get("code") == HttpCode.NOT_FOUND
 
     def test_create_api_tool_provider(self, client, db):
         data = {
@@ -96,6 +63,30 @@ class TestApiToolHandler:
         api_tool_provider = db.session.query(ApiToolProvider).get(provider_id)
         assert api_tool_provider.name == data.get("name")
 
+    @pytest.mark.parametrize("provider_id", [
+        "a9bff90b-f75f-4386-9e8f-f92b6a9ad5bb",
+        "a9bff90b-f75f-4386-9e8f-f92b6a9ad5bc"
+    ])
+    def test_get_api_tool_provider(self, provider_id, client):
+        resp = client.get(f"/api-tools/{provider_id}")
+        assert resp.status_code == 200
+        if provider_id.endswith("b"):
+            assert resp.json.get("code") == HttpCode.SUCCESS
+        elif provider_id.endswith("c"):
+            assert resp.json.get("code") == HttpCode.NOT_FOUND
+
+    @pytest.mark.parametrize("provider_id, tool_name", [
+        ("a9bff90b-f75f-4386-9e8f-f92b6a9ad5bb", "YoudaoSuggest"),
+        ("a9bff90b-f75f-4386-9e8f-f92b6a9ad5bb", "YoudaoSuggestABC")
+    ])
+    def test_get_api_tool(self, provider_id, tool_name, client):
+        resp = client.get(f"/api-tools/{provider_id}/tools/{tool_name}")
+        assert resp.status_code == 200
+        if tool_name == "YoudaoSuggest":
+            assert resp.json.get("code") == HttpCode.SUCCESS
+        elif tool_name == "YoudaoSuggestABC":
+            assert resp.json.get("code") == HttpCode.NOT_FOUND
+
     def test_delete_api_tool_provider(self, client, db):
         provider_id = "a9bff90b-f75f-4386-9e8f-f92b6a9ad5bb"
         resp = client.post(f"/api-tools/{provider_id}/delete")
@@ -106,3 +97,12 @@ class TestApiToolHandler:
         from internal.model import ApiToolProvider
         api_tool_provider = db.session.query(ApiToolProvider).get(provider_id)
         assert api_tool_provider is None
+
+    @pytest.mark.parametrize("openapi_schema", ["123", test_schema_string])
+    def test_validate_openapi_schema(self, openapi_schema, client):
+        resp = client.post("/api-tools/validate-openapi-schema", json={"openapi_schema": openapi_schema})
+        assert resp.status_code == 200
+        if openapi_schema == "123":
+            assert resp.json.get("code") == HttpCode.VALIDATE_ERROR
+        elif openapi_schema == test_schema_string:
+            assert resp.json.get("code") == HttpCode.SUCCESS
