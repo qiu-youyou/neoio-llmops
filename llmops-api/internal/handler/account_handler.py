@@ -33,7 +33,7 @@ class AccountHandler:
         """更新当前账户名称"""
         req = UpdateNameReq()
         if not req.validate():
-            raise validate_error_json(req.errors)
+            return validate_error_json(req.errors)
         self.account_service.update_account(current_user, name=req.name.data)
         return success_json("账户信息更新成功")
 
@@ -42,7 +42,7 @@ class AccountHandler:
         """更新当前用户头像"""
         req = UpdateAvatarReq()
         if not req.validate():
-            raise validate_error_json(req.errors)
+            return validate_error_json(req.errors)
         self.account_service.update_account(current_user, avatar=req.avatar.data)
         return success_json("账户信息更新成功")
 
@@ -51,6 +51,6 @@ class AccountHandler:
         """修改当前用户密码"""
         req = UpdatePasswordReq()
         if not req.validate():
-            raise validate_error_json(req.errors)
+            return validate_error_json(req.errors)
         self.account_service.update_password(current_user, req.password.data)
         return success_json("账户密码更新成功")

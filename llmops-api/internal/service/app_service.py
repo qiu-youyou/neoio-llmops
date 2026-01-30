@@ -11,9 +11,10 @@ from dataclasses import dataclass
 
 from injector import inject
 
-from internal.model import App
+from internal.model import App, Account
 from pkg.sqlalchemy import SQLAlchemy
 from .base_service import BaseService
+from ..exception import NotFoundException
 
 
 @inject
@@ -27,12 +28,9 @@ class AppService(BaseService):
         app = self.db.session.query(App).get(id)
         return app
 
-    def create_app(self) -> App:
+    def create_app(self, account: Account) -> App:
         # 创建
-        app = self.create(App,
-                          account_id=uuid.uuid4(),
-                          name="测试机器人",
-                          description="这是一个简单的聊天机器人",
+        app = self.create(App, account_id=account.id, name="测试机器人", description="这是一个简单的聊天机器人",
                           icon="")
         return app
 
@@ -47,5 +45,7 @@ class AppService(BaseService):
         # 删除
         with self.db.auto_commit():
             app = self.get_app(id)
+            if app is None:
+                raise NotFoundException("应用不存在")
             self.db.session.delete(app)
         return app

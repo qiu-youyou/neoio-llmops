@@ -84,7 +84,7 @@ class AccountService(BaseService):
             raise FailException("账号不存在或密码错误，请重试")
 
         # 生成凭证信息
-        expire_at = int((datetime.now() + timedelta(days=30)).timestamp())
+        expire_at = int((datetime.now() + timedelta(days=1)).timestamp())
         payload = {
             "sub": str(account.id),
             "iss": "llmops",

@@ -288,7 +288,6 @@ class IndexingService(BaseService):
             """线程函数 执行 postgress 与向量存储"""
             try:
                 with flask_app.app_context():
-                    # todo: 暂时不进行向量数据库的存储
                     self.vector_database_service.vector_store.add_documents(chunks, ids=ids)
                     with self.db.auto_commit():
                         self.db.session.query(Segment).filter(Segment.node_id.in_(ids)).update({

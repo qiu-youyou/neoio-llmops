@@ -85,7 +85,7 @@ class OAuthService(BaseService):
         self.update(account_oauth, encrypted_token=oauth_access_token)
 
         # 生成授权凭证
-        expire_at = int((datetime.now() + timedelta(days=30)).timestamp())
+        expire_at = int((datetime.now() + timedelta(days=1)).timestamp())
         payload = {"sub": str(account.id), "iss": "llmops", "exp": expire_at}
 
         access_token = self.jwt_service.generate_token(payload)

@@ -32,7 +32,7 @@ class OAuthHandler:
         """根据第三方名称+Code 获取授权凭证信息"""
         req = AuthorizeReq()
         if not req.validate():
-            raise validate_error_json(req.errors)
+            return validate_error_json(req.errors)
         credential = self.oauth_service.oauth_login(provider_name, req.code.data)
 
         resp = AuthorizeResp()

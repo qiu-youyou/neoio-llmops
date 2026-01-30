@@ -50,8 +50,8 @@ class Router:
 
         # 账号管理 模块
         bp.add_url_rule("/account", view_func=self.account_handler.get_current_user)
-        bp.add_url_rule("/account/password", methods=["POST"], view_func=self.account_handler.update_password)
         bp.add_url_rule("/account/name", methods=["POST"], view_func=self.account_handler.update_name)
+        bp.add_url_rule("/account/password", methods=["POST"], view_func=self.account_handler.update_password)
         bp.add_url_rule("/account/avatar", methods=["POST"], view_func=self.account_handler.update_avatar)
 
         # 应用管理 模块

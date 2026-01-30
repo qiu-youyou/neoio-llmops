@@ -7,20 +7,16 @@
 """
 import json
 from dataclasses import dataclass
-from operator import itemgetter
 from queue import Queue
 from threading import Thread
 from typing import Dict, Any, Literal, Generator
 from uuid import UUID, uuid4
 
+from flask_login import login_required, current_user
 from injector import inject
 from langchain_classic.base_memory import BaseMemory
-from langchain_classic.memory import ConversationBufferWindowMemory
-from langchain_community.chat_message_histories import FileChatMessageHistory
 from langchain_core.messages import ToolMessage
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables import RunnableConfig, RunnablePassthrough, RunnableLambda
+from langchain_core.runnables import RunnableConfig
 from langchain_core.tracers import Run
 from langchain_openai import ChatOpenAI
 from langgraph.constants import END
@@ -41,21 +37,25 @@ class AppHandler:
     builtin_provider_manager: BuiltinProviderManager
     conversation_service: ConversationService
 
+    @login_required
     def get_app(self, id: UUID):
         """查询APP记录"""
         app = self.app_service.get_app(id)
         return success_message(f"查询成功，name 为 {app.name}")
 
+    @login_required
     def create_app(self):
         """创建APP记录"""
-        app = self.app_service.create_app()
+        app = self.app_service.create_app(current_user)
         return success_message(f"应用创建成功, id 为 {app.id}")
 
+    @login_required
     def update_app(self, id: UUID):
         """更新APP记录"""
         app = self.app_service.update_app(id)
         return success_message(f"应用更新成功，修改后 name 为 {app.name}")
 
+    @login_required
     def delete_app(self, id: UUID):
         """删除APP记录"""
         app = self.app_service.delete_app(id)
@@ -79,46 +79,7 @@ class AppHandler:
             return configurable_memory.load_memory_variables(input)
         return {"history": []}
 
-    def _debug(self, app_id: UUID):
-        """聊天接口"""
-        # 校验接口参数
-        req = CompletionReq()
-        if not req.validate():
-            return validate_error_json(req.errors)
-
-        # 提示词与记忆
-        system_prompt = "你是一个强大的聊天机器人，能根据对应的上下文和历史对话信息回复用户问题。\n\n<context>{context}</context>"
-
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            MessagesPlaceholder("history"),
-            ("human", "{query}"),
-        ])
-
-        memory = ConversationBufferWindowMemory(
-            k=3,
-            input_key="query",
-            output_key="output",
-            return_messages=True,
-            chat_memory=FileChatMessageHistory("./storage/memory/chat_history.txt"),
-        )
-
-        # 创建 LLM
-        llm = ChatOpenAI(model="kimi-k2-0905-preview")
-
-        retriever = self.vector_database_service.get_retriever() | self.vector_database_service.combine_documents
-
-        # 创建调用链
-        chain = (RunnablePassthrough.assign(
-            history=RunnableLambda(self._load_memory_variables) | itemgetter("history"),
-            context=itemgetter("query") | retriever,
-        ) | prompt | llm | StrOutputParser()).with_listeners(on_end=self._save_context)
-
-        chain_input = {"query": req.query.data}
-        content = chain.invoke(chain_input, config={"configurable": {"memory": memory}})
-
-        return success_json({"content": content})
-
+    @login_required
     def debug(self, app_id: UUID):
         """聊天调试接口"""
         req = CompletionReq()
@@ -227,6 +188,7 @@ class AppHandler:
 
         return compact_generate_response(stream_event_response())
 
+    @login_required
     def ping(self):
         from internal.core.agent.agents import FunctionCallAgent
         from internal.core.agent.entities.agent_entity import AgentConfig
