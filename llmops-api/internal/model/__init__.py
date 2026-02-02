@@ -7,14 +7,14 @@
 """
 from .acount import Account, AccountOAuth
 from .api_tool import ApiTool, ApiToolProvider
-from .app import App, AppDatasetJoin
+from .app import App, AppConfig, AppConfigVersion, AppDatasetJoin
 from .conversation import Conversation, Message, MessageAgentThought
 from .dataset import Dataset, Document, Segment, KeywordTable, DatasetQuery, ProcessRule
 from .upload_file import UploadFile
 
 __all__ = [
     "Account", "AccountOAuth",
-    "App", "AppDatasetJoin",
+    "App", "AppConfig", "AppConfigVersion", "AppDatasetJoin",
     "ApiTool", "ApiToolProvider",
     "Dataset", "Document", "Segment", "KeywordTable", "DatasetQuery", "ProcessRule",
     "UploadFile",

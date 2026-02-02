@@ -55,10 +55,22 @@ class Router:
         bp.add_url_rule("/account/avatar", methods=["POST"], view_func=self.account_handler.update_avatar)
 
         # 应用管理 模块
-        bp.add_url_rule("/app", methods=["POST"], view_func=self.app_handler.create_app)
-        bp.add_url_rule("/app/<uuid:id>/delete", methods=["POST"], view_func=self.app_handler.delete_app)
-        bp.add_url_rule("/app/<uuid:id>", methods=["POST"], view_func=self.app_handler.update_app)
+        bp.add_url_rule("/apps", methods=["POST"], view_func=self.app_handler.create_app)
         bp.add_url_rule("/app/<uuid:id>", view_func=self.app_handler.get_app)
+        bp.add_url_rule("/apps/<uuid:app_id>/draft-app-config", view_func=self.app_handler.get_draft_app_config)
+        bp.add_url_rule("/apps/<uuid:app_id>/draft-app-config", methods=["POST"],
+                        view_func=self.app_handler.update_draft_app_config)
+        bp.add_url_rule("/apps/<uuid:app_id>/publish", methods=["POST"],
+                        view_func=self.app_handler.publish_draft_app_config)
+        bp.add_url_rule("/apps/<uuid:app_id>/cancel-publish", methods=["POST"],
+                        view_func=self.app_handler.cancel_publish_app_config)
+        bp.add_url_rule("/apps/<uuid:app_id>/fallback-history", methods=["POST"],
+                        view_func=self.app_handler.fallback_history_to_draft)
+        bp.add_url_rule("/apps/<uuid:app_id>/publish-histories",
+                        view_func=self.app_handler.get_publish_histories_with_page)
+
+        bp.add_url_rule("/app/<uuid:id>", methods=["POST"], view_func=self.app_handler.update_app)
+        bp.add_url_rule("/app/<uuid:id>/delete", methods=["POST"], view_func=self.app_handler.delete_app)
 
         # 内置插件 模块
         bp.add_url_rule("/builtin-tools", view_func=self.builtin_tool_handler.get_builtin_tools)

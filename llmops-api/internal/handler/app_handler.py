@@ -12,6 +12,7 @@ from threading import Thread
 from typing import Dict, Any, Literal, Generator
 from uuid import UUID, uuid4
 
+from flask import request
 from flask_login import login_required, current_user
 from injector import inject
 from langchain_classic.base_memory import BaseMemory
@@ -23,8 +24,10 @@ from langgraph.constants import END
 from langgraph.graph import MessagesState, StateGraph
 
 from internal.core.tools.builtin_tools.providers import BuiltinProviderManager
-from internal.schema.app_schema import CompletionReq
+from internal.schema.app_schema import CompletionReq, CreateAppReq, GetAppResp, GetPublishHistoriesWithPageReq, \
+    GetPublishHistoriesWithPageResp, FallbackHistoryToDraftReq
 from internal.service import AppService, VectorDatabaseService, ConversationService
+from pkg.paginator import PageModel
 from pkg.response import validate_error_json, success_json, success_message, compact_generate_response
 
 
@@ -38,20 +41,64 @@ class AppHandler:
     conversation_service: ConversationService
 
     @login_required
-    def get_app(self, id: UUID):
-        """查询APP记录"""
-        app = self.app_service.get_app(id)
-        return success_message(f"查询成功，name 为 {app.name}")
+    def create_app(self, req: CreateAppReq):
+        """个人空间新增应用"""
+        req = CreateAppReq()
+        if not req.validate():
+            return validate_error_json(req.errors)
+        app = self.app_service.create_app(req, current_user)
+        return success_json({"id": app.id})
 
     @login_required
-    def create_app(self):
-        """创建APP记录"""
-        app = self.app_service.create_app(current_user)
-        return success_message(f"应用创建成功, id 为 {app.id}")
+    def get_app(self, id: UUID):
+        """获取应用基础信息"""
+        app = self.app_service.get_app(id, current_user)
+        resp = GetAppResp()
+        return success_json(resp.dump(app))
+
+    @login_required
+    def get_draft_app_config(self, app_id: UUID):
+        """获取应用的草稿配置信息"""
+        draft_config = self.app_service.get_draft_app_config(app_id, current_user)
+        return success_json(draft_config)
+
+    @login_required
+    def update_draft_app_config(self, app_id: UUID):
+        """更新应用草稿配置"""
+        draft_app_config = request.get_json(force=True, silent=True) or {}
+        self.app_service.update_draft_app_config(app_id, draft_app_config, current_user)
+        return success_message("应用草稿配置更新成功")
+
+    @login_required
+    def publish_draft_app_config(self, app_id: UUID):
+        """发布/更新应用 运行时配置信息"""
+        self.app_service.publish_draft_app_config(app_id, current_user)
+        return success_message("发布/更新应用成功")
+
+    @login_required
+    def cancel_publish_app_config(self, app_id: UUID):
+        """取消发布应用"""
+        self.app_service.cancel_publish_app_config(app_id, current_user)
+        return success_message("取消发布应用成功")
+
+    def fallback_history_to_draft(self, app_id: UUID):
+        """应用回退指定配置版本到当前草稿"""
+        req = FallbackHistoryToDraftReq()
+        if not req.validate():
+            return validate_error_json(req.errors)
+        self.app_service.fallback_history_to_draft(app_id, req.app_config_version_id.data, current_user)
+        return success_message("已回退版本配置到草稿")
+
+    @login_required
+    def get_publish_histories_with_page(self, app_id: UUID):
+        req = GetPublishHistoriesWithPageReq(request.args)
+        app_config_versions, paginator = self.app_service.get_publish_histories_with_page(app_id, req, current_user)
+        resp = GetPublishHistoriesWithPageResp(many=True)
+        return success_json(PageModel(list=resp.dump(app_config_versions), paginator=paginator))
 
     @login_required
     def update_app(self, id: UUID):
-        """更新APP记录"""
+        """更新APP"""
         app = self.app_service.update_app(id)
         return success_message(f"应用更新成功，修改后 name 为 {app.name}")
 
@@ -66,7 +113,7 @@ class AppHandler:
         """存储对应的上下文信息到记忆实体中"""
         # 加载记忆
         configurable = config.get("configurable", {})
-        configurable_memory = configurable.get("memory", None)
+        configurable_memory = configurable.get("memory")
         if configurable_memory is not None and isinstance(configurable_memory, BaseMemory):
             configurable_memory.save_context(run_obj.inputs, run_obj.outputs)
 
@@ -74,7 +121,7 @@ class AppHandler:
     def _load_memory_variables(cls, input: Dict[str, Any], config: RunnableConfig) -> Dict[str, Any]:
         """加载记忆变量信息"""
         configurable = config.get("configurable", {})
-        configurable_memory = configurable.get("memory", None)
+        configurable_memory = configurable.get("memory")
         if configurable_memory is not None and isinstance(configurable_memory, BaseMemory):
             return configurable_memory.load_memory_variables(input)
         return {"history": []}
