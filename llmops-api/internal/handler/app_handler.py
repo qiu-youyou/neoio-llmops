@@ -41,7 +41,7 @@ class AppHandler:
     conversation_service: ConversationService
 
     @login_required
-    def create_app(self, req: CreateAppReq):
+    def create_app(self):
         """个人空间新增应用"""
         req = CreateAppReq()
         if not req.validate():
@@ -50,9 +50,9 @@ class AppHandler:
         return success_json({"id": app.id})
 
     @login_required
-    def get_app(self, id: UUID):
+    def get_app(self, app_id: UUID):
         """获取应用基础信息"""
-        app = self.app_service.get_app(id, current_user)
+        app = self.app_service.get_app(app_id, current_user)
         resp = GetAppResp()
         return success_json(resp.dump(app))
 

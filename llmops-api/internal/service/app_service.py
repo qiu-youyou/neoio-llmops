@@ -41,7 +41,7 @@ class AppService(BaseService):
                 account_id=account.id,
                 name=req.name.data,
                 icon=req.icon.data,
-                description=account.description,
+                description=req.description.data,
                 status=AppStatus.DRAFT,
             )
             # 创建APP并刷新数据
@@ -84,7 +84,7 @@ class AppService(BaseService):
         draft_tools = draft_app_config.tools
 
         # 遍历工具 校验工具是否使用不存在的工具 需要剔除数据并更新
-        for draft_tool in draft_tools.tools:
+        for draft_tool in draft_tools:
             if draft_tool["type"] == "builtin_tool":
                 # 查询内置工具提供者 检测是否存在
                 provider = self.builtin_provider_manager.get_provider(draft_tool["provider_id"])
@@ -203,14 +203,16 @@ class AppService(BaseService):
             "workflows": workflows,
         }
 
-    def update_draft_app_config(self, app_id: UUID, draft_app_config: dict[str, Any], account: Account):
+    def update_draft_app_config(self, app_id: UUID, draft_app_config: dict[str, Any],
+                                account: Account) -> AppConfigVersion:
         """更新应用草稿配置"""
         app = self.get_app(app_id, account)
         # 校验传递的草稿配置
         draft_app_config = self._validate_draft_app_config(draft_app_config, account)
         draft_app_config_record = app.draft_app_config
+
         # todo: server_onupdate 字段手动传递
-        self.update(draft_app_config_record, update_at=datetime.now(), **draft_app_config)
+        self.update(draft_app_config_record, updated_at=datetime.now(), **draft_app_config)
         return draft_app_config_record
 
     def publish_draft_app_config(self, app_id: UUID, account: Account):
@@ -263,6 +265,7 @@ class AppService(BaseService):
             AppConfigVersion.app_id == app.id,
             AppConfigVersion.config_type == AppConfigType.PUBLISHED
         ).scalar()
+
         # 新增发布历史 配置信息
         self.create(AppConfigVersion, version=max_version + 1, config_type=AppConfigType.PUBLISHED,
                     **draft_app_config_copy)
@@ -299,6 +302,7 @@ class AppService(BaseService):
         # 更新草稿配置信息
         draft_app_config_record = app.draft_app_config
         self.update(draft_app_config_record, updated_at=datetime.now(), **draft_app_config_dict)
+        return draft_app_config_record
 
     def get_publish_histories_with_page(self, app_id: UUID, req: GetPublishHistoriesWithPageReq, account: Account):
         """获取应用的发布历史 配置信息 列表"""

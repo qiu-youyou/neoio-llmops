@@ -9,7 +9,7 @@
 from flask_wtf import FlaskForm
 from marshmallow import Schema, fields, pre_dump
 from wtforms import StringField
-from wtforms.validators import DataRequired, Length, URl
+from wtforms.validators import DataRequired, Length, URL
 
 from internal.lib.helper import datetime_to_timestamp
 from internal.model import App, AppConfigVersion
@@ -21,7 +21,7 @@ class CreateAppReq(FlaskForm):
     name = StringField("name", validators=[
         DataRequired("应用名称不能为空"), Length(max=30, message="应用名称最长为30个字符")])
     icon = StringField("icon", validators=[
-        DataRequired("应用图标不能为空"), URl(message="图标格式必须是URL链接")
+        DataRequired("应用图标不能为空"), URL(message="图标格式必须是URL链接")
     ])
     description = StringField("description", validators=[
         Length(max=800, message="应用描述最长为800个字符")
@@ -41,7 +41,7 @@ class GetAppResp(Schema):
     created_at = fields.Integer(dump_default=0)
 
     @pre_dump
-    def process_data(self, data: App):
+    def process_data(self, data: App, **kwargs):
         return {
             "id": data.id,
             "debug_conversation_id": data.debug_conversation_id if data.debug_conversation_id else "",

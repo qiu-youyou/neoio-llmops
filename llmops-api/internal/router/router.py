@@ -56,10 +56,12 @@ class Router:
 
         # 应用管理 模块
         bp.add_url_rule("/apps", methods=["POST"], view_func=self.app_handler.create_app)
-        bp.add_url_rule("/app/<uuid:id>", view_func=self.app_handler.get_app)
+
+        bp.add_url_rule("/apps/<uuid:app_id>", view_func=self.app_handler.get_app)
         bp.add_url_rule("/apps/<uuid:app_id>/draft-app-config", view_func=self.app_handler.get_draft_app_config)
         bp.add_url_rule("/apps/<uuid:app_id>/draft-app-config", methods=["POST"],
                         view_func=self.app_handler.update_draft_app_config)
+
         bp.add_url_rule("/apps/<uuid:app_id>/publish", methods=["POST"],
                         view_func=self.app_handler.publish_draft_app_config)
         bp.add_url_rule("/apps/<uuid:app_id>/cancel-publish", methods=["POST"],
