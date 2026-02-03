@@ -21,7 +21,7 @@ from internal.entity.app_entity import AppStatus, AppConfigType, DEFAULT_APP_CON
 from internal.exception import NotFoundException, ForbiddenException, ValidateErrorException, FailException
 from internal.lib.helper import datetime_to_timestamp
 from internal.model import App, Account, AppConfigVersion, ApiTool, Dataset, AppConfig, AppDatasetJoin
-from internal.schema.app_schema import CreateAppReq, GetPublishHistoriesWithPageReq
+from internal.schema.app_schema import CreateAppReq, GetPublishHistoriesWithPageReq, UpdateAppReq
 from pkg.paginator import Paginator
 from pkg.sqlalchemy import SQLAlchemy
 from .base_service import BaseService
@@ -68,6 +68,18 @@ class AppService(BaseService):
             raise NotFoundException("该应用不存在")
         if app.account_id != account.id:
             raise ForbiddenException("当前账号无权限！")
+        return app
+
+    def update_app(self, app_id: uuid.UUID, req: UpdateAppReq, account: Account) -> App:
+        """更新指定应用信息"""
+        app = self.get_app(app_id, account)
+        self.update(app, name=req.name.data, icon=req.icon.data, description=req.description.data)
+        return app
+
+    def delete_app(self, app_id: uuid.UUID, account: Account) -> App:
+        """删除指定应用"""
+        app = self.get_app(app_id, account)
+        self.delete(app)
         return app
 
     def get_draft_app_config(self, app_id: UUID, account: Account) -> dict[str, Any]:
@@ -314,11 +326,40 @@ class AppService(BaseService):
 
         return app_config_versions, paginator
 
-    def update_app(self, id: uuid.UUID) -> App:
-        """"""
+    def get_debug_conversation_summary(self, app_id: UUID, account: Account):
+        """获取应用会话调试的长期记忆"""
+        app = self.get_app(app_id, account)
+        # 获取并校验草稿配置信息
+        draft_app_config = self.get_draft_app_config(app_id, account)
+        # 应用配置中是否启用长期记忆
+        if draft_app_config["long_term_memory"]["enable"] is False:
+            raise FailException("该应用未开启长期记忆功能")
+        return app.debug_conversation.summary
 
-    def delete_app(self, id: uuid.UUID) -> App:
-        """"""
+    def update_debug_conversation_summary(self, app_id: UUID, summary: str, account: Account):
+        """更新应用会话调试的长期记忆"""
+        app = self.get_app(app_id, account)
+        # 获取并校验草稿配置信息
+        draft_app_config = self.get_draft_app_config(app_id, account)
+        # 应用配置中是否启用长期记忆
+        if draft_app_config["long_term_memory"]["enable"] is False:
+            raise FailException("该应用未开启长期记忆功能")
+        # 更新长期记忆
+        debug_conversation = app.debug_conversation
+        self.update(debug_conversation, summary=summary)
+        return debug_conversation
+
+    def delete_debug_conversation(self, app_id: UUID, account: Account):
+        """删除应用会话调试记录"""
+        app = self.get_app(app_id, account)
+        if not app.debug_conversation_id:
+            return app
+        # 删除与会话的关联
+        app = self.update(app, debug_conversation_id=None)
+        return app
+
+    def debug_chat(self, app_id: UUID, query: str, account: Account):
+        app = self.get_app(app_id, account)
 
     def _validate_draft_app_config(self, draft_app_config: dict[str, Any], account: Account) -> dict[str, Any]:
         """校验传递的应用草稿配置信息，返回校验后的数据"""

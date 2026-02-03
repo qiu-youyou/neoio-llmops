@@ -25,7 +25,7 @@ from langgraph.graph import MessagesState, StateGraph
 
 from internal.core.tools.builtin_tools.providers import BuiltinProviderManager
 from internal.schema.app_schema import CompletionReq, CreateAppReq, GetAppResp, GetPublishHistoriesWithPageReq, \
-    GetPublishHistoriesWithPageResp, FallbackHistoryToDraftReq
+    GetPublishHistoriesWithPageResp, FallbackHistoryToDraftReq, UpdateDebugConversationSummaryReq, UpdateAppReq
 from internal.service import AppService, VectorDatabaseService, ConversationService
 from pkg.paginator import PageModel
 from pkg.response import validate_error_json, success_json, success_message, compact_generate_response
@@ -48,6 +48,21 @@ class AppHandler:
             return validate_error_json(req.errors)
         app = self.app_service.create_app(req, current_user)
         return success_json({"id": app.id})
+
+    @login_required
+    def update_app(self, app_id: UUID):
+        """更新指定应用信息"""
+        req = UpdateAppReq()
+        if not req.validate():
+            raise validate_error_json(req.errors)
+        self.app_service.update_app(app_id, req, current_user)
+        return success_message("更新应用成功")
+
+    @login_required
+    def delete_app(self, app_id: UUID):
+        """删除指定应用"""
+        self.app_service.delete_app(app_id, current_user)
+        return success_message("删除应用成功")
 
     @login_required
     def get_app(self, app_id: UUID):
@@ -97,16 +112,25 @@ class AppHandler:
         return success_json(PageModel(list=resp.dump(app_config_versions), paginator=paginator))
 
     @login_required
-    def update_app(self, id: UUID):
-        """更新APP"""
-        app = self.app_service.update_app(id)
-        return success_message(f"应用更新成功，修改后 name 为 {app.name}")
+    def get_debug_conversation_summary(self, app_id: UUID):
+        """获取应用会话调试的长期记忆"""
+        summary = self.app_service.get_debug_conversation_summary(app_id, current_user)
+        return success_json({"summary": summary})
 
     @login_required
-    def delete_app(self, id: UUID):
-        """删除APP记录"""
-        app = self.app_service.delete_app(id)
-        return success_message(f"应用删除成功, id 为 {app.id}", )
+    def update_debug_conversation_summary(self, app_id: UUID):
+        """更新应用会话调试的长期记忆"""
+        req = UpdateDebugConversationSummaryReq()
+        if not req.validate():
+            raise validate_error_json(req.errors)
+        self.app_service.update_debug_conversation_summary(app_id, req.summary.data, current_user)
+        return success_message("更新长期记忆成功")
+
+    @login_required
+    def delete_debug_conversation(self, app_id: UUID):
+        """删除应用会话调试记录"""
+        self.app_service.delete_debug_conversation(app_id, current_user)
+        return success_message("删除会话记录成功")
 
     @classmethod
     def _save_context(cls, run_obj: Run, config: RunnableConfig) -> None:

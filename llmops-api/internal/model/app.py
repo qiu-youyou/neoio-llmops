@@ -18,7 +18,9 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 
 from internal.entity.app_entity import AppConfigType, DEFAULT_APP_CONFIG
+from internal.entity.conversation_entity import InvokeFrom
 from internal.extension.database_extension import db
+from .conversation import Conversation
 
 
 class AppConfig(db.Model):
@@ -126,6 +128,29 @@ class App(db.Model):
             db.session.add(app_config_version)
             db.session.commit()
         return app_config_version
+
+    @property
+    def debug_conversation(self) -> Conversation:
+        """只读属性 返回当前应用的会话信息"""
+        debug_conversation = None
+        if self.debug_conversation_id is not None:
+            debug_conversation = db.session.query(Conversation).filter(
+                Conversation.id == self.debug_conversation_id,
+                Conversation.invoke_from == InvokeFrom.DEBUGGER
+            ).one_or_none()
+        if not self.debug_conversation_id or not debug_conversation:
+            with db.auto_commit():
+                debug_conversation = Conversation(
+                    app_id=self.id,
+                    name="New Conversation",
+                    invoke_from=InvokeFrom.DEBUGGER,
+                    created_by=self.account_id,
+                )
+                db.session.add(debug_conversation)
+                db.session.flush()
+                # 更新当前应用的会话ID
+                self.debug_conversation_id = debug_conversation.id
+        return debug_conversation
 
 
 class AppDatasetJoin(db.Model):

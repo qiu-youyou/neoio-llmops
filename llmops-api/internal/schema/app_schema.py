@@ -28,6 +28,18 @@ class CreateAppReq(FlaskForm):
     ])
 
 
+class UpdateAppReq(FlaskForm):
+    """修改应用请求结构"""
+    name = StringField("name", validators=[
+        DataRequired("应用名称不能为空"), Length(max=30, message="应用名称最长为30个字符")])
+    icon = StringField("icon", validators=[
+        DataRequired("应用图标不能为空"), URL(message="图标格式必须是URL链接")
+    ])
+    description = StringField("description", validators=[
+        Length(max=800, message="应用描述最长为800个字符")
+    ])
+
+
 class GetAppResp(Schema):
     """获取应用基础信息响应结构"""
     id = fields.UUID(dump_default="")
@@ -77,6 +89,18 @@ class FallbackHistoryToDraftReq(FlaskForm):
     """回退历史版本到当前草稿请求"""
     app_config_version_id = StringField("app_config_version_id", validators=[
         DataRequired("回退版本id不能为空")
+    ])
+
+
+class UpdateDebugConversationSummaryReq(FlaskForm):
+    """更新应用会话长期记忆请求体"""
+    summary = StringField("summary", default="")
+
+
+class DebugChatReq(FlaskForm):
+    """应用调试会话请求结构体"""
+    query = StringField("query", validators=[
+        DataRequired("用户提问不能为空"),
     ])
 
 

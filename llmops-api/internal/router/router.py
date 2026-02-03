@@ -56,12 +56,14 @@ class Router:
 
         # 应用管理 模块
         bp.add_url_rule("/apps", methods=["POST"], view_func=self.app_handler.create_app)
-
+        bp.add_url_rule("/apps/<uuid:app_id>/delete", methods=["POST"], view_func=self.app_handler.delete_app)
+        bp.add_url_rule("/apps/<uuid:app_id>", methods=["POST"], view_func=self.app_handler.update_app)
         bp.add_url_rule("/apps/<uuid:app_id>", view_func=self.app_handler.get_app)
+
+        # 应用管理 应用配置相关
         bp.add_url_rule("/apps/<uuid:app_id>/draft-app-config", view_func=self.app_handler.get_draft_app_config)
         bp.add_url_rule("/apps/<uuid:app_id>/draft-app-config", methods=["POST"],
                         view_func=self.app_handler.update_draft_app_config)
-
         bp.add_url_rule("/apps/<uuid:app_id>/publish", methods=["POST"],
                         view_func=self.app_handler.publish_draft_app_config)
         bp.add_url_rule("/apps/<uuid:app_id>/cancel-publish", methods=["POST"],
@@ -71,8 +73,14 @@ class Router:
         bp.add_url_rule("/apps/<uuid:app_id>/publish-histories",
                         view_func=self.app_handler.get_publish_histories_with_page)
 
-        bp.add_url_rule("/app/<uuid:id>", methods=["POST"], view_func=self.app_handler.update_app)
-        bp.add_url_rule("/app/<uuid:id>/delete", methods=["POST"], view_func=self.app_handler.delete_app)
+        # 应用管理 会话管理相关
+        bp.add_url_rule("/apps/<uuid:app_id>/summary", view_func=self.app_handler.get_debug_conversation_summary)
+        bp.add_url_rule("/apps/<uuid:app_id>/summary", methods=["POST"],
+                        view_func=self.app_handler.update_debug_conversation_summary)
+        bp.add_url_rule("/apps/<uuid:app_id>/conversations/delete-debug-conversation", methods=["POST"],
+                        view_func=self.app_handler.delete_debug_conversation)
+
+        # bp.add_url_rule("/apps/<uuid:app_id>/conversations", methods=["POST"], view_func=self.app_handler.debug_chat)
 
         # 内置插件 模块
         bp.add_url_rule("/builtin-tools", view_func=self.builtin_tool_handler.get_builtin_tools)
