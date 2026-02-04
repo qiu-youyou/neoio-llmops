@@ -171,7 +171,6 @@ class AppHandler:
             ]
 
             # 创建聊天、工具、路由节点
-
             def chatbot(state: MessagesState) -> MessagesState:
                 """聊天对话节点"""
                 llm = ChatOpenAI(model="kimi-k2-0905-preview", temperature=0.7).bind_tools(tools)
@@ -242,7 +241,7 @@ class AppHandler:
 
             graph = graph_builder.compile()
 
-            result = graph.invoke({"messages": [("human", query)]})
+            graph.invoke({"messages": [("human", query)]})
             q.put(None)
 
         def stream_event_response() -> Generator:
