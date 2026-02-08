@@ -5,6 +5,7 @@
 @Time   :   2026/1/23 09:03
 @Author :   s.qiu@foxmail.com
 """
+from uuid import UUID
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import AnyMessage
@@ -60,5 +61,14 @@ class AgentConfig(BaseModel):
 
 class AgentState(MessagesState):
     """智能体状态类"""
+    task_id: UUID  # 该次状态对应的任务id，每次运行时会使用独立的任务id
+    iteration_count: int  # 迭代次数，默认为0
     history: list[AnyMessage]  # 短期记忆(历史记录)
     long_term_memory: str  # 长期记忆
+
+
+# 知识库检索工具名称
+DATASET_RETRIEVAL_TOOL_NAME = "dataset_retrieval"
+
+# Agent超过最大迭代次数时提示内容
+MAX_ITERATION_RESPONSE = "当前Agent迭代次数已超过限制，请重试"

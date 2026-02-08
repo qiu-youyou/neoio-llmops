@@ -6,25 +6,36 @@
 @Author :   s.qiu@foxmail.com
 """
 
+import json
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Generator
 from uuid import UUID
 
-from flask import request
+from flask import request, current_app
 from injector import inject
+from langchain_openai import ChatOpenAI
+from redis import Redis
 from sqlalchemy import func, desc
 
+from internal.core.memory import TokenBufferMemory
+from internal.core.tools.api_tools.entities import ToolEntity
+from internal.core.tools.api_tools.providers import ApiProviderManager
 from internal.core.tools.builtin_tools.providers import BuiltinProviderManager
 from internal.entity.app_entity import AppStatus, AppConfigType, DEFAULT_APP_CONFIG
+from internal.entity.conversation_entity import MessageStatus, InvokeFrom
+from internal.entity.dataset_entity import RetrievalSource
 from internal.exception import NotFoundException, ForbiddenException, ValidateErrorException, FailException
 from internal.lib.helper import datetime_to_timestamp
-from internal.model import App, Account, AppConfigVersion, ApiTool, Dataset, AppConfig, AppDatasetJoin
+from internal.model import App, Account, AppConfigVersion, ApiTool, Dataset, AppConfig, AppDatasetJoin, Message
 from internal.schema.app_schema import CreateAppReq, GetPublishHistoriesWithPageReq, UpdateAppReq
 from pkg.paginator import Paginator
 from pkg.sqlalchemy import SQLAlchemy
 from .base_service import BaseService
+from .retrieval_service import RetrievalService
+from ..core.agent.agents import FunctionCallAgent, AgentQueueManager
+from ..core.agent.entities import AgentConfig
 
 
 @inject
@@ -32,7 +43,10 @@ from .base_service import BaseService
 class AppService(BaseService):
     """应用 服务"""
     db: SQLAlchemy
+    redis_client: Redis
+    retrieval_service: RetrievalService
     builtin_provider_manager: BuiltinProviderManager
+    api_provider_manager: ApiProviderManager
 
     def create_app(self, req: CreateAppReq, account: Account) -> App:
         """个人空间新增应用"""
@@ -358,8 +372,94 @@ class AppService(BaseService):
         app = self.update(app, debug_conversation_id=None)
         return app
 
-    def debug_chat(self, app_id: UUID, query: str, account: Account):
+    def debug_chat(self, app_id: UUID, query: str, account: Account) -> Generator:
         app = self.get_app(app_id, account)
+        # 当前应用 草稿配置
+        draft_app_config = app.draft_app_config
+        # 当前应用 会话信息
+        debug_conversation = app.debug_conversation
+        # 新建消息记录
+        message = self.create(
+            Message,
+            app_id=app.id,
+            conversation_id=debug_conversation.id,
+            created_by=account.id,
+            query=query,
+            status=MessageStatus.NORMAL
+        )
+
+        # 根据配置实例化模型
+        llm = ChatOpenAI(
+            model=draft_app_config["model_config"]["model"],
+            **draft_app_config["model_config"]["parameters"],
+        )
+
+        # 提取短期记忆
+        token_buffer_memory = TokenBufferMemory(db=self.db, conversation=debug_conversation, model_instance=llm)
+        history = token_buffer_memory.get_history_prompt_messages(message_limit=draft_app_config["dialog_round"])
+
+        # 将草稿配置中的 tools 转换为 LangChain 工具
+        tools = []
+        for tool in draft_app_config["tools"]:
+            if tool["type"] == "builtin_tool":
+                builtin_tool = self.builtin_provider_manager.get_tool(tool["provider"]["id"], tool["tool"]["name"])
+                if not builtin_tool:
+                    continue
+                tools.append(builtin_tool(**tool["tool"]["params"]))
+            else:
+                api_tool = self.get(ApiTool, tool["tool"]["id"])
+                if not api_tool:
+                    continue
+                tools.append(self.api_provider_manager.get_tool(ToolEntity(
+                    id=str(api_tool.id),
+                    name=api_tool.name,
+                    url=api_tool.url,
+                    method=api_tool.method,
+                    description=api_tool.description,
+                    headers=api_tool.provider.headers,
+                    parameters=api_tool.parameters
+                )))
+
+        # 关联知识库 构建 LangChain 知识库检索工具
+        if draft_app_config["datasets"]:
+            dataset_retrieval = self.retrieval_service.create_langchain_tool_from_search(
+                flask_app=current_app._get_current_object(),
+                dataset_ids=[dataset["id"] for dataset in draft_app_config["datasets"]],
+                account_id=account.id,
+                retrival_source=RetrievalSource.APP,
+                **draft_app_config["retrieval_config"],
+            )
+            tools.append(dataset_retrieval)
+
+        # 构建AGENT智能体应用 FunctionCallAgent
+        task_id = uuid.uuid4()
+        agent = FunctionCallAgent(
+            AgentConfig(
+                llm=llm,
+                enable_long_term_memory=draft_app_config["long_term_memory"]["enable"],
+                tools=tools,
+            ),
+            AgentQueueManager(
+                user_id=account.id,
+                task_id=task_id,
+                invoke_from=InvokeFrom.DEBUGGER,
+                redis_client=self.redis_client
+            )
+        )
+
+        for agent_queue_event in agent.run(query, history, debug_conversation.summary):
+            data = {
+                "id": str(agent_queue_event.id),
+                "task_id": str(agent_queue_event.task_id),
+                "event": agent_queue_event.event,
+                "thought": agent_queue_event.thought,
+                "observation": agent_queue_event.observation,
+                "tool": agent_queue_event.tool,
+                "tool_input": agent_queue_event.tool_input,
+                "answer": agent_queue_event.answer,
+                "latency": agent_queue_event.latency,
+            }
+            yield f"event: {agent_queue_event.event}\ndata: {json.dumps(data)}\n\n"
 
     def _validate_draft_app_config(self, draft_app_config: dict[str, Any], account: Account) -> dict[str, Any]:
         """校验传递的应用草稿配置信息，返回校验后的数据"""

@@ -25,7 +25,8 @@ from langgraph.graph import MessagesState, StateGraph
 
 from internal.core.tools.builtin_tools.providers import BuiltinProviderManager
 from internal.schema.app_schema import CompletionReq, CreateAppReq, GetAppResp, GetPublishHistoriesWithPageReq, \
-    GetPublishHistoriesWithPageResp, FallbackHistoryToDraftReq, UpdateDebugConversationSummaryReq, UpdateAppReq
+    GetPublishHistoriesWithPageResp, FallbackHistoryToDraftReq, UpdateDebugConversationSummaryReq, UpdateAppReq, \
+    DebugChatReq
 from internal.service import AppService, VectorDatabaseService, ConversationService
 from pkg.paginator import PageModel
 from pkg.response import validate_error_json, success_json, success_message, compact_generate_response
@@ -259,16 +260,14 @@ class AppHandler:
         return compact_generate_response(stream_event_response())
 
     @login_required
+    def debug_chat(self, app_id: UUID) -> Generator:
+        """应用调试对话"""
+        req = DebugChatReq()
+        if req.validate():
+            return validate_error_json(req.errors)
+        response = self.app_service.debug_chat(app_id, req.query.data, current_user)
+        return compact_generate_response(response)
+
+    @login_required
     def ping(self):
-        from internal.core.agent.agents import FunctionCallAgent
-        from internal.core.agent.entities.agent_entity import AgentConfig
-        from langchain_openai import ChatOpenAI
-
-        agent = FunctionCallAgent(AgentConfig(
-            llm=ChatOpenAI(model="kimi-k2-0905-preview"),
-            preset_prompt="你是一个拥有20年经验的诗人，请根据用户提供的主题来写一首诗"
-        ))
-        state = agent.run("春天", [], "")
-        content = state["messages"][-1].content
-
-        return success_json({"content": content})
+        pass
