@@ -37,12 +37,12 @@ class FunctionCallAgent(BaseAgent):
             history = []
 
         agent = self._build_graph()
-
-        thread = Thread(target=agent.invoke, args=({
-            "messages": [HumanMessage(content=query)],
-            "history": history,
-            "long_term_memory": long_term_memory
-        }))
+        thread = Thread(target=agent.invoke, args=(
+            {
+                "messages": [HumanMessage(content=query)],
+                "history": history,
+                "long_term_memory": long_term_memory
+            },))
         thread.start()
 
         yield from self.agent_queue_manager.listen()
@@ -78,7 +78,7 @@ class FunctionCallAgent(BaseAgent):
             self.agent_queue_manager.publish(AgentQueueEvent(
                 id=uuid.uuid4(),
                 task_id=self.agent_queue_manager.task_id,
-                event=AgentQueueEvent.LONG_TERM_MEMORY_RECALL,
+                event=QueueEvent.LONG_TERM_MEMORY_RECALL,
                 observation=long_term_memory
             ))
 
@@ -138,7 +138,7 @@ class FunctionCallAgent(BaseAgent):
                 self.agent_queue_manager.publish(AgentQueueEvent(
                     id=id,
                     task_id=self.agent_queue_manager.task_id,
-                    event=AgentQueueEvent.AGENT_MESSAGE,
+                    event=QueueEvent.AGENT_MESSAGE,
                     messages=messages_to_dict(state["messages"]),
                     thought=chunk.content,
                     answer=chunk.content,

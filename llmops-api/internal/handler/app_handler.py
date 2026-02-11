@@ -263,7 +263,7 @@ class AppHandler:
     def debug_chat(self, app_id: UUID) -> Generator:
         """应用调试对话"""
         req = DebugChatReq()
-        if req.validate():
+        if not req.validate():
             return validate_error_json(req.errors)
         response = self.app_service.debug_chat(app_id, req.query.data, current_user)
         return compact_generate_response(response)

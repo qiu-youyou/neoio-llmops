@@ -37,7 +37,7 @@ class AgentQueueManager:
         user_prefix = "account" if self.invoke_from in [InvokeFrom.WEB_APP, InvokeFrom.DEBUGGER] else "end-user"
 
         # 设置缓存 代表任务已经开始
-        self.redis_client.setex(self.generate_task_belong_cache_key(task_id), 1800, f"{user_prefix}-{str(user_id)}")
+        # self.redis_client.setex(self.generate_task_belong_cache_key(task_id), 1800, f"{user_prefix}-{str(user_id)}")
 
     def publish(self, agent_queue_event: AgentQueueEvent) -> None:
         """发布事件到队列"""
@@ -62,10 +62,10 @@ class AgentQueueManager:
     def _is_stopped(self) -> bool:
         """监听是否停止"""
         task_stopped_cache_key = self.generate_task_stopped_cache_key(self.task_id)
-        result = self.redis_client.get(task_stopped_cache_key)
+        # result = self.redis_client.get(task_stopped_cache_key)
 
-        if result is not None:
-            return True
+        # if result is not None:
+        #     return True
         return False
 
     def listen(self) -> Generator:

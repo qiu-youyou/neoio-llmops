@@ -33,7 +33,7 @@ class TokenBufferMemory:
             Message.answer != "",
             Message.is_deleted == False,
             Message.status.in_([MessageStatus.NORMAL, MessageStatus.STOP])
-        ).order_by(desc("created_time")).limit(message_limit).all()
+        ).order_by(desc("created_at")).limit(message_limit).all()
         messages = list(reversed(messages))
 
         # messages 转 langchain 消息

@@ -24,11 +24,11 @@ from internal.core.tools.api_tools.entities import ToolEntity
 from internal.core.tools.api_tools.providers import ApiProviderManager
 from internal.core.tools.builtin_tools.providers import BuiltinProviderManager
 from internal.entity.app_entity import AppStatus, AppConfigType, DEFAULT_APP_CONFIG
-from internal.entity.conversation_entity import MessageStatus, InvokeFrom
+from internal.entity.conversation_entity import InvokeFrom
 from internal.entity.dataset_entity import RetrievalSource
 from internal.exception import NotFoundException, ForbiddenException, ValidateErrorException, FailException
 from internal.lib.helper import datetime_to_timestamp
-from internal.model import App, Account, AppConfigVersion, ApiTool, Dataset, AppConfig, AppDatasetJoin, Message
+from internal.model import App, Account, AppConfigVersion, ApiTool, Dataset, AppConfig, AppDatasetJoin
 from internal.schema.app_schema import CreateAppReq, GetPublishHistoriesWithPageReq, UpdateAppReq
 from pkg.paginator import Paginator
 from pkg.sqlalchemy import SQLAlchemy
@@ -375,24 +375,17 @@ class AppService(BaseService):
     def debug_chat(self, app_id: UUID, query: str, account: Account) -> Generator:
         app = self.get_app(app_id, account)
         # 当前应用 草稿配置
-        draft_app_config = app.draft_app_config
+        draft_app_config = self.get_draft_app_config(app_id, account)
         # 当前应用 会话信息
         debug_conversation = app.debug_conversation
+
         # 新建消息记录
-        message = self.create(
-            Message,
-            app_id=app.id,
-            conversation_id=debug_conversation.id,
-            created_by=account.id,
-            query=query,
-            status=MessageStatus.NORMAL
-        )
+        # message = self.create(Message, app_id=app.id, conversation_id=debug_conversation.id, created_by=account.id,
+        #                       query=query, status=MessageStatus.NORMAL)
 
         # 根据配置实例化模型
-        llm = ChatOpenAI(
-            model=draft_app_config["model_config"]["model"],
-            **draft_app_config["model_config"]["parameters"],
-        )
+        llm = ChatOpenAI(model=draft_app_config["model_config"]["model"],
+                         **draft_app_config["model_config"]["parameters"])
 
         # 提取短期记忆
         token_buffer_memory = TokenBufferMemory(db=self.db, conversation=debug_conversation, model_instance=llm)
@@ -431,21 +424,12 @@ class AppService(BaseService):
             )
             tools.append(dataset_retrieval)
 
-        # 构建AGENT智能体应用 FunctionCallAgent
+        # 构建 AGENT 智能体 使用 FUNCTIONCALLAGENT
         task_id = uuid.uuid4()
         agent = FunctionCallAgent(
-            AgentConfig(
-                llm=llm,
-                enable_long_term_memory=draft_app_config["long_term_memory"]["enable"],
-                tools=tools,
-            ),
-            AgentQueueManager(
-                user_id=account.id,
-                task_id=task_id,
-                invoke_from=InvokeFrom.DEBUGGER,
-                redis_client=self.redis_client
-            )
-        )
+            AgentConfig(llm=llm, enable_long_term_memory=draft_app_config["long_term_memory"]["enable"], tools=tools),
+            AgentQueueManager(user_id=account.id, task_id=task_id, invoke_from=InvokeFrom.DEBUGGER,
+                              redis_client=self.redis_client))
 
         for agent_queue_event in agent.run(query, history, debug_conversation.summary):
             data = {
