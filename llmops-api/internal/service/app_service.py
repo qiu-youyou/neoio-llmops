@@ -373,6 +373,7 @@ class AppService(BaseService):
         return app
 
     def debug_chat(self, app_id: UUID, query: str, account: Account) -> Generator:
+        """智能体 对话调试"""
         app = self.get_app(app_id, account)
         # 当前应用 草稿配置
         draft_app_config = self.get_draft_app_config(app_id, account)
