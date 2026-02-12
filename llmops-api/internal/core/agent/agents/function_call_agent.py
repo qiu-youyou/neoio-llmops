@@ -18,7 +18,8 @@ from langgraph.constants import END
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from internal.core.agent.entities.agent_entity import AgentState, AGENT_SYSTEM_PROMPT_TEMPLATE
+from internal.core.agent.entities.agent_entity import AgentState, AGENT_SYSTEM_PROMPT_TEMPLATE, \
+    DATASET_RETRIEVAL_TOOL_NAME
 from internal.core.agent.entities.queue_entity import AgentQueueEvent, QueueEvent
 from internal.exception import FailException
 from .base_agent import BaseAgent
@@ -139,7 +140,7 @@ class FunctionCallAgent(BaseAgent):
                     id=id,
                     task_id=self.agent_queue_manager.task_id,
                     event=QueueEvent.AGENT_MESSAGE,
-                    messages=messages_to_dict(state["messages"]),
+                    message=messages_to_dict(state["messages"]),
                     thought=chunk.content,
                     answer=chunk.content,
                     latency=(time.perf_counter() - start_at)
@@ -152,11 +153,11 @@ class FunctionCallAgent(BaseAgent):
                 task_id=self.agent_queue_manager.task_id,
                 event=QueueEvent.AGENT_THOUGHT,
                 thought=json.dumps(gathered.tool_calls),
-                messages=messages_to_dict(state["messages"]),
+                message=messages_to_dict(state["messages"]),
                 latency=(time.perf_counter() - start_at)
             ))
         elif generation_type == "message":
-            # 7.如果LLM直接生成answer则表示已经拿到了最终答案，则停止监听
+            # 如果LLM直接生成answer则表示已经拿到了最终答案，则停止监听
             self.agent_queue_manager.stop_listen()
 
         return {"messages": [gathered]}
@@ -187,7 +188,7 @@ class FunctionCallAgent(BaseAgent):
             # 判断执行工具的名字，提交不同事件，涵盖智能体动作以及知识库检索
             event = (
                 QueueEvent.AGENT_ACTION
-                if tool_call["name"] != "dataset_retrieval"
+                if tool_call["name"] != DATASET_RETRIEVAL_TOOL_NAME
                 else QueueEvent.DATASET_RETRIEVAL
             )
             self.agent_queue_manager.publish(

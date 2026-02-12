@@ -25,8 +25,8 @@ class TokenBufferMemory:
 
     def get_history_prompt_messages(self, max_token_limit: int = 2000, message_limit: int = 10, ) -> list[AnyMessage]:
         """根据 token限制+消息数量 获取指定会话的历史消息列表"""
-        # if self.conversation is None:
-        # return []
+        if self.conversation is None:
+            return []
         # 查询会话消息列表 过滤状态为正常的数据 倒叙排序
         messages = self.db.session.query(Message).filter(
             Message.conversation_id == self.conversation.id,
