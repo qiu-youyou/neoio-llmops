@@ -50,6 +50,9 @@ class AgentConfig(BaseModel):
     # 调用来源 默认：WEB_APP
     invoke_from: InvokeFrom = InvokeFrom.WEB_APP
 
+    # 最大迭代次数 默认：5
+    max_iteration_count: int = 5
+
     # 智能体预设提示词
     system_prompt: str = AGENT_SYSTEM_PROMPT_TEMPLATE
     # 预设prompt，默认为空，该值由前端用户在编排的时候记录，并填充到system_prompt中
@@ -77,4 +80,4 @@ class AgentState(MessagesState):
 DATASET_RETRIEVAL_TOOL_NAME = "dataset_retrieval"
 
 # Agent超过最大迭代次数时提示内容
-MAX_ITERATION_RESPONSE = "当前Agent迭代次数已超过限制，请重试"
+MAX_ITERATION_RESPONSE = "当前Agent迭代次数已超过限制，请重试！"
