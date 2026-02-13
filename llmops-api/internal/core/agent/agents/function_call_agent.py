@@ -9,10 +9,9 @@
 import json
 import time
 import uuid
-from threading import Thread
-from typing import Literal, Generator
+from typing import Literal
 
-from langchain_core.messages import AnyMessage, HumanMessage, SystemMessage, RemoveMessage, ToolMessage, \
+from langchain_core.messages import HumanMessage, SystemMessage, RemoveMessage, ToolMessage, \
     messages_to_dict
 from langgraph.constants import END
 from langgraph.graph import StateGraph
@@ -20,7 +19,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 from internal.core.agent.entities.agent_entity import AgentState, AGENT_SYSTEM_PROMPT_TEMPLATE, \
     DATASET_RETRIEVAL_TOOL_NAME
-from internal.core.agent.entities.queue_entity import AgentQueueEvent, QueueEvent
+from internal.core.agent.entities.queue_entity import AgentThought, QueueEvent
 from internal.exception import FailException
 from .base_agent import BaseAgent
 
@@ -28,29 +27,7 @@ from .base_agent import BaseAgent
 class FunctionCallAgent(BaseAgent):
     """工具函数调用智能体"""
 
-    def run(
-            self,
-            query: str,
-            history: list[AnyMessage] = None,
-            long_term_memory: str = "") -> Generator[AgentQueueEvent, None, None]:
-        """运行Agent应用"""
-        if history is None:
-            history = []
-
-        agent = self._build_graph()
-        thread = Thread(target=agent.invoke, args=(
-            {
-                "messages": [HumanMessage(content=query)],
-                "history": history,
-                "long_term_memory": long_term_memory
-            },))
-        thread.start()
-
-        yield from self.agent_queue_manager.listen()
-
-    def _build_graph(self) -> CompiledStateGraph:
-        """LANGGRAPH 图程序构建"""
-
+    def build_agent(self) -> CompiledStateGraph:
         # 创建图 创建节点
         graph = StateGraph(AgentState)
         graph.add_node("long_term_memory_recall", self._long_term_memory_recall_node)
@@ -76,7 +53,7 @@ class FunctionCallAgent(BaseAgent):
             long_term_memory = state["long_term_memory"]
 
             # 发布长记忆召回事件
-            self.agent_queue_manager.publish(AgentQueueEvent(
+            self.agent_queue_manager.publish(AgentThought(
                 id=uuid.uuid4(),
                 task_id=self.agent_queue_manager.task_id,
                 event=QueueEvent.LONG_TERM_MEMORY_RECALL,
@@ -136,7 +113,7 @@ class FunctionCallAgent(BaseAgent):
 
             # 发布智能体消息事件
             if generation_type == "message":
-                self.agent_queue_manager.publish(AgentQueueEvent(
+                self.agent_queue_manager.publish(AgentThought(
                     id=id,
                     task_id=self.agent_queue_manager.task_id,
                     event=QueueEvent.AGENT_MESSAGE,
@@ -148,7 +125,7 @@ class FunctionCallAgent(BaseAgent):
 
         # 发布智能体推理事件
         if generation_type == "thought":
-            self.agent_queue_manager.publish(AgentQueueEvent(
+            self.agent_queue_manager.publish(AgentThought(
                 id=id,
                 task_id=self.agent_queue_manager.task_id,
                 event=QueueEvent.AGENT_THOUGHT,
@@ -192,7 +169,7 @@ class FunctionCallAgent(BaseAgent):
                 else QueueEvent.DATASET_RETRIEVAL
             )
             self.agent_queue_manager.publish(
-                AgentQueueEvent(
+                AgentThought(
                     id=id,
                     task_id=self.agent_queue_manager.task_id,
                     event=event,
