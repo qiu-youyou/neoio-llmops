@@ -19,7 +19,7 @@ from pydantic import PrivateAttr
 from internal.core.agent.agents.agent_queue_manager import AgentQueueManager
 from internal.core.agent.entities import AgentConfig
 from internal.core.agent.entities.agent_entity import AgentState
-from internal.core.agent.entities.queue_entity import AgentThought
+from internal.core.agent.entities.queue_entity import AgentThought, AgentResult
 from internal.exception import FailException
 
 
@@ -48,9 +48,9 @@ class BaseAgent(Serializable, Runnable):
         """构建智能体 等待子类实现"""
         raise NotImplementedError("_build_agent 未实现")
 
-        # def invoke(self, input: AgentState, config: Optional[RunnableConfig] = None) -> AgentResult:
+    def invoke(self, input: AgentState, config: Optional[RunnableConfig] = None, **kwargs: Any) -> AgentResult:
         """块内容响应 一次生成后返回"""
-        # pass
+        pass
 
     def stream(self, input: AgentState, config: Optional[RunnableConfig] = None,
                **kwargs: Optional[Any]) -> Iterator[AgentThought]:
@@ -62,7 +62,7 @@ class BaseAgent(Serializable, Runnable):
         input["iteration_count"] = input.get("iteration_count", 0)
 
         # 创建子线程执行
-        thread = Thread(target=self.invoke, args=(input,))
+        thread = Thread(target=self._agent.invoke, args=(input,))
         thread.start()
 
         yield from self._agent_queue_manager.listen(input["task_id"])

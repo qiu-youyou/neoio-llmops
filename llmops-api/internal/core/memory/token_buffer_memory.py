@@ -16,6 +16,14 @@ from internal.model import Conversation, Message
 from pkg.sqlalchemy import SQLAlchemy
 
 
+def simple_token_counter(messages: list) -> int:
+    total = 0
+    for m in messages:
+        if hasattr(m, "content") and m.content:
+            total += len(m.content) // 4  # 粗略估算 1 token ≈ 4 chars
+    return total
+
+
 @dataclass
 class TokenBufferMemory:
     """基于token计数的缓冲记忆组件"""
@@ -45,7 +53,7 @@ class TokenBufferMemory:
         return trim_messages(
             messages=prompt_messages,
             max_tokens=max_token_limit,
-            token_counter=self.model_instance,
+            token_counter=simple_token_counter,
             strategy="last",
             start_on="human",
             end_on="ai",

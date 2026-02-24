@@ -31,8 +31,8 @@ class AgentQueueManager:
         self._queues = {}
 
         # 内部初始化 redis_client
-        from app.http.module import Injector
-        self.redis_client = Injector.get(Redis)
+        from app.http.module import injector
+        self.redis_client = injector.get(Redis)
 
     def publish(self, task_id: uuid.UUID, agent_thought: AgentThought) -> None:
         """发布事件到队列"""
@@ -109,6 +109,26 @@ class AgentQueueManager:
                 # 是否停止 添加停止时间
                 if self._is_stopped(task_id):
                     self.publish(task_id, AgentThought(id=uuid.uuid4(), task_id=task_id, event=QueueEvent.STOP))
+
+    @classmethod
+    def set_stop_flag(cls, task_id: uuid.UUID, invoke_from: InvokeFrom, user_id: uuid.UUID) -> None:
+        """根据任务ID+调用来源停止会话"""
+        # 获取 redis_client
+        from app.http.module import injector
+        redis_client = injector.get(Redis)
+        # 获取当前正在执行的任务键
+        result = redis_client.get(cls.generate_task_belong_cache_key(task_id))
+        if not result:
+            return
+
+        # 计算对应缓存结果
+        user_prefix = "account" if invoke_from in [InvokeFrom.WEB_APP, InvokeFrom.DEBUGGER] else "end-user"
+        if result.decode("utf-8") != f"{user_prefix}-{str(user_id)}":
+            return
+
+        # 生成停止键标识
+        stopped_cache_key = cls.generate_task_stopped_cache_key(task_id)
+        redis_client.setex(stopped_cache_key, 600, 1)
 
     @classmethod
     def generate_task_belong_cache_key(cls, task_id: uuid.UUID) -> str:

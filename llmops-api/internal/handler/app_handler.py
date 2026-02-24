@@ -26,7 +26,7 @@ from langgraph.graph import MessagesState, StateGraph
 from internal.core.tools.builtin_tools.providers import BuiltinProviderManager
 from internal.schema.app_schema import CompletionReq, CreateAppReq, GetAppResp, GetPublishHistoriesWithPageReq, \
     GetPublishHistoriesWithPageResp, FallbackHistoryToDraftReq, UpdateDebugConversationSummaryReq, UpdateAppReq, \
-    DebugChatReq
+    DebugChatReq, GetDebugConversationMessagesWithPageReq, GetDebugConversationMessagesWithPageResp
 from internal.service import AppService, VectorDatabaseService, ConversationService
 from pkg.paginator import PageModel
 from pkg.response import validate_error_json, success_json, success_message, compact_generate_response
@@ -152,6 +152,16 @@ class AppHandler:
         return {"history": []}
 
     @login_required
+    def get_debug_conversation_messages_with_page(self, app_id: UUID):
+        """获取调试会话消息列表"""
+        req = GetDebugConversationMessagesWithPageReq(request.args)
+        if not req.validate():
+            return validate_error_json(req.errors)
+        messages, paginator = self.app_service.get_debug_conversation_messages_with_page(app_id, req, current_user)
+        resp = GetDebugConversationMessagesWithPageResp(many=True)
+        return success_json(PageModel(list=resp.dump(messages), paginator=paginator))
+
+    @login_required
     def debug(self, app_id: UUID):
         """聊天调试接口"""
         req = CompletionReq()
@@ -258,6 +268,12 @@ class AppHandler:
         t.start()
 
         return compact_generate_response(stream_event_response())
+
+    @login_required
+    def stop_debug_chat(self, app_id: UUID, task_id: UUID):
+        """关闭应用指定任务的调试会话"""
+        self.app_service.stop_debug_chat(app_id, task_id, current_user)
+        return success_message("应用会话停止调试成功")
 
     @login_required
     def debug_chat(self, app_id: UUID) -> Generator:

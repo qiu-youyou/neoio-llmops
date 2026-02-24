@@ -27,8 +27,9 @@ from .base_agent import BaseAgent
 
 class FunctionCallAgent(BaseAgent):
     """工具函数调用智能体"""
+    name: str = "function_call_agent"
 
-    def build_agent(self) -> CompiledStateGraph:
+    def _build_agent(self) -> CompiledStateGraph:
         # 创建图
         graph = StateGraph(AgentState)
         # 添加节点
@@ -50,7 +51,7 @@ class FunctionCallAgent(BaseAgent):
 
     def _preset_operation_node(self, state: AgentState) -> AgentState:
         """预设节点：输入审核、数据预处理灯"""
-        review_config = self.agent_config['review_config']
+        review_config = self.agent_config.review_config
         query = state["messages"][-1].content
         # 是否开启审核配置
         if review_config["enable"] and review_config["inputs_config"]["enable"]:
@@ -152,16 +153,14 @@ class FunctionCallAgent(BaseAgent):
                     gathered += chunk
 
                 # 根据生成的类型 向队列中添加不同事件
-                if not generation_type:
-                    if chunk.tool_calls:
-                        generation_type = "thought"
-                    elif chunk.content:
-                        generation_type = "message"
-
+                if chunk.tool_calls:
+                    generation_type = "thought"
+                elif chunk.content:
+                    generation_type = "message"
                 # 发布智能体消息事件
                 if generation_type == "message":
                     # 检测输出审核
-                    review_config = self.agent_config['review_config']
+                    review_config = self.agent_config.review_config
                     content = chunk.content
                     if review_config["enable"] and review_config["outputs_config"]["enable"]:
                         for keyword in review_config["keywords"]:
