@@ -30,7 +30,7 @@ class GaodeWeatherTool(BaseTool):
     def _run(self, *args: Any, **kwargs: Any) -> str:
         """根据传入的城市名称运行调用api获取城市对应的天气预报信息"""
         try:
-            # 1.获取高德API秘钥，如果没有创建的话，则抛出错误
+            # 1.获取高德API密钥，如果没有创建的话，则抛出错误
             gaode_api_key = os.getenv("GAODE_API_KEY")
             if not gaode_api_key:
                 return f"高德开放平台API未配置"

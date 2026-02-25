@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 """
-@File   :   acount
+@File   :   account
 @Time   :   2026/1/26 21:27
 @Author :   s.qiu@foxmail.com
 """

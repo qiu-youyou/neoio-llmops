@@ -12,7 +12,8 @@ from injector import inject
 
 from internal.handler import (
     AppHandler, BuiltinToolHandler, ApiToolHandler, UploadFileHandler,
-    DatasetHandler, DocumentHandler, SegmentHandler, OAuthHandler, AuthHandler, AccountHandler)
+    DatasetHandler, DocumentHandler, SegmentHandler, OAuthHandler, AuthHandler, AccountHandler, AIHandler,
+    ApiKeyHandler, OpenApiHandler)
 
 
 @inject
@@ -29,12 +30,15 @@ class Router:
     dataset_handler: DatasetHandler
     document_handler: DocumentHandler
     segment_handler: SegmentHandler
+    ai_handler: AIHandler
+    api_key_handler: ApiKeyHandler
+    openapi_handler: OpenApiHandler
 
     def register_router(self, app: Flask):
         """注册路由"""
         # 创建一个蓝图
         bp = Blueprint("llmops", __name__, url_prefix="")
-
+        openpi_bp = Blueprint("openpi", __name__, url_prefix="")
         # 将 URL 与对应的控制器方法绑定
 
         # 对话接口测试
@@ -149,8 +153,27 @@ class Router:
                         view_func=self.segment_handler.get_segments_with_page)
         bp.add_url_rule("/datasets/<uuid:dataset_id>/documents/<uuid:document_id>/segments/<uuid:segment_id>",
                         view_func=self.segment_handler.get_segment)
+
         # 指定知识库进行召回测试
         bp.add_url_rule("/datasets/<uuid:dataset_id>/hit", methods=["POST"], view_func=self.dataset_handler.hit)
 
+        # AI辅助模块
+        bp.add_url_rule("/ai/optimize-prompt", methods=["POST"], view_func=self.ai_handler.optimize_prompt)
+        bp.add_url_rule("/ai/suggested-questions", methods=["POST"],
+                        view_func=self.ai_handler.generate_suggested_questions)
+
+        # 开放API密钥模块
+        bp.add_url_rule("/openapi/api-keys", methods=["POST"], view_func=self.api_key_handler.create_api_key)
+        bp.add_url_rule("/openapi/api-keys/<uuid:api_key_id>/delete", methods=["POST"],
+                        view_func=self.api_key_handler.delete_api_key)
+        bp.add_url_rule("/openapi/api-keys/<uuid:api_key_id>", methods=["POST"],
+                        view_func=self.api_key_handler.update_api_key)
+        bp.add_url_rule("/openapi/api-keys/<uuid:api_key_id>/is-active", methods=["POST"],
+                        view_func=self.api_key_handler.update_api_key_is_active)
+        bp.add_url_rule("/openapi/api-keys", view_func=self.api_key_handler.get_api_keys_with_page)
+
+        openpi_bp.add_url_rule("/openapi/chat", methods=["POST"], view_func=self.openapi_handler.chat)
+
         # 在应用上注册蓝图
         app.register_blueprint(bp)
+        app.register_blueprint(openpi_bp)

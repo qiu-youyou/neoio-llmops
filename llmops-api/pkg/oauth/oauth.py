@@ -22,7 +22,7 @@ class OAuthUserInfo:
 class OAuth(ABC):
     """第三方授权认证 基础类"""
     client_id: str  # 客户端id
-    client_secret: str  # 客户端秘钥
+    client_secret: str  # 客户端密钥
     redirect_uri: str  # 重定向uri
 
     @abstractmethod
