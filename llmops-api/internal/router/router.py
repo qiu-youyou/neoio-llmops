@@ -38,7 +38,7 @@ class Router:
         """注册路由"""
         # 创建一个蓝图
         bp = Blueprint("llmops", __name__, url_prefix="")
-        openpi_bp = Blueprint("openpi", __name__, url_prefix="")
+        openapi_bp = Blueprint("openapi", __name__, url_prefix="")
         # 将 URL 与对应的控制器方法绑定
 
         # 对话接口测试
@@ -172,8 +172,8 @@ class Router:
                         view_func=self.api_key_handler.update_api_key_is_active)
         bp.add_url_rule("/openapi/api-keys", view_func=self.api_key_handler.get_api_keys_with_page)
 
-        openpi_bp.add_url_rule("/openapi/chat", methods=["POST"], view_func=self.openapi_handler.chat)
+        openapi_bp.add_url_rule("/openapi/chat", methods=["POST"], view_func=self.openapi_handler.chat)
 
         # 在应用上注册蓝图
         app.register_blueprint(bp)
-        app.register_blueprint(openpi_bp)
+        app.register_blueprint(openapi_bp)

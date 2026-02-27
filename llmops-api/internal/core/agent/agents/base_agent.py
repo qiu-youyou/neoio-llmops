@@ -19,7 +19,7 @@ from pydantic import PrivateAttr
 from internal.core.agent.agents.agent_queue_manager import AgentQueueManager
 from internal.core.agent.entities import AgentConfig
 from internal.core.agent.entities.agent_entity import AgentState
-from internal.core.agent.entities.queue_entity import AgentThought, AgentResult
+from internal.core.agent.entities.queue_entity import AgentThought, AgentResult, QueueEvent
 from internal.exception import FailException
 
 
@@ -50,7 +50,44 @@ class BaseAgent(Serializable, Runnable):
 
     def invoke(self, input: AgentState, config: Optional[RunnableConfig] = None, **kwargs: Any) -> AgentResult:
         """块内容响应 一次生成后返回"""
-        pass
+        # 调用 stream 获取流事件输出数据
+        agent_result = AgentResult(query=input["messages"][0].content)
+        agent_thoughts = {}
+        for agent_thought in self.stream(input, config):
+            event_id = str(agent_thought.id)
+            # 记录事件 排除PING事件
+            if agent_thought.event != QueueEvent.PING:
+                # 处理 agent_thought 事件为 agent_message 事件为数据叠加
+                if agent_thought.event == QueueEvent.AGENT_MESSAGE:
+                    if event_id not in agent_thoughts:
+                        agent_thoughts[event_id] = agent_thought
+                    else:
+                        agent_thoughts[event_id] = agent_thoughts[event_id].model_copy(update={
+                            "thought": agent_thoughts[event_id].thought + agent_thought.thought,
+                            "answer": agent_thoughts[event_id].answer + agent_thought.answer,
+                            "latency": agent_thought.latency,
+                        })
+                    # 拼接智能体回答消息
+                    agent_result.answer += agent_thought.answer
+
+                # 处理 agent_though 其他事件 直接覆盖 并且当放生异常事件需要更新状态记录异常
+                else:
+                    agent_thoughts[event_id] = agent_thought
+                    if agent_thought.event in [QueueEvent.STOP, QueueEvent.TIMEOUT, QueueEvent.ERROR]:
+                        agent_result.status = agent_thought.event
+                        agent_result.error = agent_thought.observation if agent_thought.event == QueueEvent.ERROR else ""
+
+        # 合并推理
+        agent_result.agent_thoughts = [agent_thought for agent_thought in agent_thoughts.values()]
+        # 合并消息
+        agent_result.message = next(
+            (agent_thought.message for agent_thought in agent_thoughts.values()
+             if agent_thought.event == QueueEvent.AGENT_MESSAGE), []
+        )
+        # 合并总耗时
+        agent_result.latency = sum([agent_thought.latency for agent_thought in agent_thoughts.values()])
+
+        return agent_result
 
     def stream(self, input: AgentState, config: Optional[RunnableConfig] = None,
                **kwargs: Optional[Any]) -> Iterator[AgentThought]:

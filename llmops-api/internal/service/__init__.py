@@ -9,6 +9,7 @@ from .account_service import AccountService
 from .ai_service import AIService
 from .api_key_service import ApiKeyService
 from .api_tool_service import ApiToolService
+from .app_config_service import AppConfigService
 from .app_service import AppService
 from .base_service import BaseService
 from .builtin_tool_service import BuiltinToolService
@@ -22,6 +23,7 @@ from .jieba_service import JiebaService
 from .jwt_service import JWTService
 from .keyword_table_service import KeywordTableService
 from .oauth_service import OAuthService
+from .openapi_service import OpenApiService
 from .process_rule_service import ProcessRuleService
 from .segment_service import SegmentService
 from .upload_file_service import UploadFileService
@@ -33,6 +35,7 @@ __all__ = [
     "AccountService",
     "BaseService",
     "AppService",
+    "AppConfigService",
     "VectorDatabaseService",
     "BuiltinToolService",
     "ApiToolService",
@@ -48,5 +51,6 @@ __all__ = [
     "SegmentService",
     "ConversationService",
     "AIService",
-    "ApiKeyService"
+    "ApiKeyService",
+    "OpenApiService"
 ]

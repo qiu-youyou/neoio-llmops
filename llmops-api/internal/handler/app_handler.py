@@ -6,6 +6,7 @@
 @Author :   s.qiu@foxmail.com
 """
 import json
+import uuid
 from dataclasses import dataclass
 from queue import Queue
 from threading import Thread
@@ -16,7 +17,7 @@ from flask import request
 from flask_login import login_required, current_user
 from injector import inject
 from langchain_classic.base_memory import BaseMemory
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import ToolMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tracers import Run
 from langchain_openai import ChatOpenAI
@@ -286,4 +287,13 @@ class AppHandler:
 
     @login_required
     def ping(self):
-        pass
+        from internal.core.agent.agents import FunctionCallAgent
+        from internal.core.agent.entities import AgentConfig
+        from internal.core.tools.builtin_tools.providers.google import google_serper
+        llm = ChatOpenAI(model="kimi-k2-0905-preview")
+        agent = FunctionCallAgent(llm=llm, agent_config=AgentConfig(
+            user_id=uuid.uuid4(),
+            tools=[google_serper()]
+        ))
+        result = agent.invoke({"messages": [HumanMessage("帮我搜索下2024年北京半程马拉松的前3名成绩是多少")]})
+        return success_json({"agent_result": result.model_dump()})

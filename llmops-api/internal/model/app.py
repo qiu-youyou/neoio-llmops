@@ -52,6 +52,10 @@ class AppConfig(db.Model):
     )
     created_at = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP(0)"))
 
+    @property
+    def app_dataset_joins(self) -> list["AppDatasetJoin"]:
+        return db.session.query(AppDatasetJoin).filter(AppDatasetJoin.app_id == self.app_id).all()
+
 
 class AppConfigVersion(db.Model):
     """应用配置版本历史表，用于存储草稿配置+历史发布配置"""
@@ -128,6 +132,13 @@ class App(db.Model):
             db.session.add(app_config_version)
             db.session.commit()
         return app_config_version
+
+    @property
+    def app_config(self) -> AppConfig:
+        """只读属性 获取当前应用配置"""
+        if not self.app_config_id:
+            return None
+        return db.session.query(AppConfig).get(self.app_config_id)
 
     @property
     def debug_conversation(self) -> Conversation:
