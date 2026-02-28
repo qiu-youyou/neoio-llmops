@@ -27,7 +27,8 @@ from langgraph.graph import MessagesState, StateGraph
 from internal.core.tools.builtin_tools.providers import BuiltinProviderManager
 from internal.schema.app_schema import CompletionReq, CreateAppReq, GetAppResp, GetPublishHistoriesWithPageReq, \
     GetPublishHistoriesWithPageResp, FallbackHistoryToDraftReq, UpdateDebugConversationSummaryReq, UpdateAppReq, \
-    DebugChatReq, GetDebugConversationMessagesWithPageReq, GetDebugConversationMessagesWithPageResp
+    DebugChatReq, GetDebugConversationMessagesWithPageReq, GetDebugConversationMessagesWithPageResp, GetAppsWithPageReq, \
+    GetAppsWithPageResp
 from internal.service import AppService, VectorDatabaseService, ConversationService
 from pkg.paginator import PageModel
 from pkg.response import validate_error_json, success_json, success_message, compact_generate_response
@@ -52,19 +53,19 @@ class AppHandler:
         return success_json({"id": app.id})
 
     @login_required
-    def update_app(self, app_id: UUID):
-        """更新指定应用信息"""
-        req = UpdateAppReq()
-        if not req.validate():
-            raise validate_error_json(req.errors)
-        self.app_service.update_app(app_id, req, current_user)
-        return success_message("更新应用成功")
-
-    @login_required
     def delete_app(self, app_id: UUID):
         """删除指定应用"""
         self.app_service.delete_app(app_id, current_user)
         return success_message("删除应用成功")
+
+    @login_required
+    def update_app(self, app_id: UUID):
+        """更新指定应用信息"""
+        req = UpdateAppReq()
+        if not req.validate():
+            return validate_error_json(req.errors)
+        self.app_service.update_app(app_id, current_user, **req.data)
+        return success_message("更新应用成功")
 
     @login_required
     def get_app(self, app_id: UUID):
@@ -72,6 +73,22 @@ class AppHandler:
         app = self.app_service.get_app(app_id, current_user)
         resp = GetAppResp()
         return success_json(resp.dump(app))
+
+    @login_required
+    def get_apps_with_page(self):
+        """获取应用分页列表"""
+        req = GetAppsWithPageReq(request.args)
+        if not req.validate():
+            return validate_error_json(req.errors)
+        apps, paginator = self.app_service.get_apps_with_page(req, current_user)
+        resp = GetAppsWithPageResp(many=True)
+        return success_json(PageModel(list=resp.dump(apps), paginator=paginator))
+
+    @login_required
+    def copy_app(self, app_id: UUID):
+        """创建应用副本"""
+        app = self.app_service.copy_app(app_id, current_user)
+        return success_json({"id": app.id})
 
     @login_required
     def get_draft_app_config(self, app_id: UUID):

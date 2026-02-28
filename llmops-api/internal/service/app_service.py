@@ -31,9 +31,10 @@ from internal.entity.app_entity import AppStatus, AppConfigType, DEFAULT_APP_CON
 from internal.entity.conversation_entity import InvokeFrom, MessageStatus
 from internal.entity.dataset_entity import RetrievalSource
 from internal.exception import NotFoundException, ForbiddenException, ValidateErrorException, FailException
+from internal.lib.helper import remove_fields
 from internal.model import App, Account, AppConfigVersion, ApiTool, Dataset, AppConfig, AppDatasetJoin, Message
-from internal.schema.app_schema import CreateAppReq, GetPublishHistoriesWithPageReq, UpdateAppReq, \
-    GetDebugConversationMessagesWithPageReq
+from internal.schema.app_schema import CreateAppReq, GetPublishHistoriesWithPageReq, \
+    GetDebugConversationMessagesWithPageReq, GetAppsWithPageReq
 from pkg.paginator import Paginator
 from pkg.sqlalchemy import SQLAlchemy
 from .app_config_service import AppConfigService
@@ -90,17 +91,62 @@ class AppService(BaseService):
             raise ForbiddenException("当前账号无权限！")
         return app
 
-    def update_app(self, app_id: uuid.UUID, req: UpdateAppReq, account: Account) -> App:
-        """更新指定应用信息"""
-        app = self.get_app(app_id, account)
-        self.update(app, name=req.name.data, icon=req.icon.data, description=req.description.data)
-        return app
-
     def delete_app(self, app_id: uuid.UUID, account: Account) -> App:
         """删除指定应用"""
         app = self.get_app(app_id, account)
         self.delete(app)
         return app
+
+    def update_app(self, app_id: uuid.UUID, account: Account, **kwargs) -> App:
+        """更新指定应用信息"""
+        app = self.get_app(app_id, account)
+        self.update(app, **kwargs)
+        return app
+
+    def get_apps_with_page(self, req: GetAppsWithPageReq, account: Account) -> tuple[list[App], Paginator]:
+        """获取应用分页列表"""
+        paginate = Paginator(self.db, req)
+        filters = [App.account_id == account.id]
+        if req.search_word.data:
+            filters.append(App.name.ilike(f"%{req.search_word.data}%"))
+
+        apps = paginate.paginate(self.db.session.query(App).filter(*filters).order_by(desc("created_at")))
+        return apps, paginate
+
+    def copy_app(self, app_id: uuid.UUID, account: Account) -> App:
+        """创建应用副本 拷贝Agent信息创建新Agent"""
+
+        # 获取应用以及应用草稿配置
+        app = self.get_app(app_id, account)
+        draft_app_config = app.draft_app_config
+        # 复制 应用信息、应用草稿配置信息
+        app_copy = app.__dict__.copy()
+        draft_app_config_copy = draft_app_config.__dict__.copy()
+
+        # 移除不需要拷贝的字段
+        app_remove_fields = ["id", "app_config_id", "draft_app_config_id", "debug_conversation_id", "status",
+                             "updated_at", "created_at", "_sa_instance_state"]
+        draft_app_config_remove_fields = ["id", "app_id", "version", "updated_at", "created_at", "_sa_instance_state"]
+        remove_fields(app_copy, app_remove_fields)
+        remove_fields(draft_app_config_copy, draft_app_config_remove_fields)
+
+        # 添加到数据库 自动提交上下文
+        with self.db.auto_commit():
+            new_app = App(**app_copy, status=AppStatus.DRAFT)
+            self.db.session.add(new_app)
+            self.db.session.flush()
+
+            new_draft_app_config = AppConfigVersion(**draft_app_config_copy, app_id=new_app.id, version=0)
+            self.db.session.add(new_draft_app_config)
+            self.db.session.flush()
+
+            new_app.draft_app_config_id = new_draft_app_config.id
+
+        return new_app
+
+    def get_draft_app_config(self, app_id: UUID, account: Account) -> dict[str, Any]:
+        app = self.get_app(app_id, account)
+        return self.app_config_service.get_draft_app_config(app)
 
     def update_draft_app_config(self, app_id: UUID, draft_app_config: dict[str, Any],
                                 account: Account) -> AppConfigVersion:
@@ -117,7 +163,7 @@ class AppService(BaseService):
     def publish_draft_app_config(self, app_id: UUID, account: Account):
         """发布/更新指定应用草稿配置为运行时配置"""
         app = self.get_app(app_id, account)
-        draft_app_config = self.app_config_service.get_draft_app_config(app)
+        draft_app_config = self.get_draft_app_config(app_id, account)
 
         # 创建应用的运行配置
         app_config = self.create(
@@ -132,6 +178,7 @@ class AppService(BaseService):
             opening_questions=draft_app_config["opening_questions"],
             speech_to_text=draft_app_config["speech_to_text"],
             text_to_speech=draft_app_config["text_to_speech"],
+            suggested_after_answer=draft_app_config["suggested_after_answer"],
             review_config=draft_app_config["review_config"],
             # todo:等待工作流模块完成
             workflows=draft_app_config["workflows"],
@@ -217,7 +264,7 @@ class AppService(BaseService):
     def get_debug_conversation_summary(self, app_id: UUID, account: Account):
         """获取应用会话调试的长期记忆"""
         app = self.get_app(app_id, account)
-        draft_app_config = self.app_config_service.get_draft_app_config(app)
+        draft_app_config = self.get_draft_app_config(app_id, account)
 
         # 应用配置中是否启用长期记忆
         if draft_app_config["long_term_memory"]["enable"] is False:
@@ -228,7 +275,7 @@ class AppService(BaseService):
         """更新应用会话调试的长期记忆"""
         app = self.get_app(app_id, account)
         # 获取并校验草稿配置信息
-        draft_app_config = self.app_config_service.get_draft_app_config(app)
+        draft_app_config = self.get_draft_app_config(app_id, account)
         # 应用配置中是否启用长期记忆
         if draft_app_config["long_term_memory"]["enable"] is False:
             raise FailException("该应用未开启长期记忆功能")
@@ -275,7 +322,7 @@ class AppService(BaseService):
         # 获取应用信息
         app = self.get_app(app_id, account)
         # 获取当前应用 最新草稿配置
-        draft_app_config = self.app_config_service.get_draft_app_config(app)
+        draft_app_config = self.get_draft_app_config(app_id, account)
         # 获取当前应用 会话信息
         debug_conversation = app.debug_conversation
 
@@ -367,7 +414,7 @@ class AppService(BaseService):
             "model_config", "dialog_round", "preset_prompt",
             "tools", "workflows", "datasets", "retrieval_config",
             "long_term_memory", "opening_statement", "opening_questions",
-            "speech_to_text", "text_to_speech", "review_config",
+            "speech_to_text", "text_to_speech", "suggested_after_answer", "review_config",
         ]
 
         # 2.判断传递的草稿配置是否在可接受字段内
@@ -565,20 +612,34 @@ class AppService(BaseService):
             ):
                 raise ValidateErrorException("文本转语音设置格式错误")
 
-        # 15.校验review_config审核配置
+        # 15 校验回答后生成建议问题
+        if "suggested_after_answer" in draft_app_config:
+            suggested_after_answer = draft_app_config["suggested_after_answer"]
+
+            # 15.1 校验回答后建议问题格式
+            if not suggested_after_answer or not isinstance(suggested_after_answer, dict):
+                raise ValidateErrorException("回答后建议问题设置格式错误")
+            # 15.2 校验回答后建议问题格式
+            if (
+                    set(suggested_after_answer.keys()) != {"enable"}
+                    or not isinstance(suggested_after_answer["enable"], bool)
+            ):
+                raise ValidateErrorException("回答后建议问题设置格式错误")
+
+        # 16.校验review_config审核配置
         if "review_config" in draft_app_config:
             review_config = draft_app_config["review_config"]
 
-            # 15.1 校验字段格式，非空
+            # 16.1 校验字段格式，非空
             if not review_config or not isinstance(review_config, dict):
                 raise ValidateErrorException("审核配置格式错误")
-            # 15.2 校验字段信息
+            # 16.2 校验字段信息
             if set(review_config.keys()) != {"enable", "keywords", "inputs_config", "outputs_config"}:
                 raise ValidateErrorException("审核配置格式错误")
-            # 15.3 校验enable
+            # 16.3 校验enable
             if not isinstance(review_config["enable"], bool):
                 raise ValidateErrorException("review.enable格式错误")
-            # 15.4 校验keywords
+            # 16.4 校验keywords
             if (
                     not isinstance(review_config["keywords"], list)
                     or (review_config["enable"] and len(review_config["keywords"]) == 0)
@@ -588,7 +649,7 @@ class AppService(BaseService):
             for keyword in review_config["keywords"]:
                 if not isinstance(keyword, str):
                     raise ValidateErrorException("review.keywords敏感词必须是字符串")
-            # 15.5 校验inputs_config输入配置
+            # 16.5 校验inputs_config输入配置
             if (
                     not review_config["inputs_config"]
                     or not isinstance(review_config["inputs_config"], dict)
@@ -597,7 +658,7 @@ class AppService(BaseService):
                     or not isinstance(review_config["inputs_config"]["preset_response"], str)
             ):
                 raise ValidateErrorException("review.inputs_config必须是一个字典")
-            # 15.6 校验outputs_config输出配置
+            # 16.6 校验outputs_config输出配置
             if (
                     not review_config["outputs_config"]
                     or not isinstance(review_config["outputs_config"], dict)
@@ -605,7 +666,7 @@ class AppService(BaseService):
                     or not isinstance(review_config["outputs_config"]["enable"], bool)
             ):
                 raise ValidateErrorException("review.outputs_config格式错误")
-            # 15.7 在开启审核模块的时候，必须确保inputs_config或者是outputs_config至少有一个是开启的
+            # 16.7 在开启审核模块的时候，必须确保inputs_config或者是outputs_config至少有一个是开启的
             if review_config["enable"]:
                 if (
                         review_config["inputs_config"]["enable"] is False

@@ -63,6 +63,8 @@ class Router:
         bp.add_url_rule("/apps/<uuid:app_id>/delete", methods=["POST"], view_func=self.app_handler.delete_app)
         bp.add_url_rule("/apps/<uuid:app_id>", methods=["POST"], view_func=self.app_handler.update_app)
         bp.add_url_rule("/apps/<uuid:app_id>", view_func=self.app_handler.get_app)
+        bp.add_url_rule("/apps", view_func=self.app_handler.get_apps_with_page)
+        bp.add_url_rule("/apps/<uuid:app_id>/copy", methods=["POST"], view_func=self.app_handler.copy_app)
 
         # 应用管理 应用配置相关
         bp.add_url_rule("/apps/<uuid:app_id>/draft-app-config", view_func=self.app_handler.get_draft_app_config)
@@ -171,7 +173,7 @@ class Router:
         bp.add_url_rule("/openapi/api-keys/<uuid:api_key_id>/is-active", methods=["POST"],
                         view_func=self.api_key_handler.update_api_key_is_active)
         bp.add_url_rule("/openapi/api-keys", view_func=self.api_key_handler.get_api_keys_with_page)
-
+        # 开放API会话接口
         openapi_bp.add_url_rule("/openapi/chat", methods=["POST"], view_func=self.openapi_handler.chat)
 
         # 在应用上注册蓝图

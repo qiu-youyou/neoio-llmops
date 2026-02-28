@@ -45,7 +45,7 @@ class OpenApiService(BaseService):
     retrieval_service: RetrievalService
     conversation_service: ConversationService
 
-    def chat(self, req: OpenAPIChatReq, account: Account) -> None:
+    def chat(self, req: OpenAPIChatReq, account: Account):
         """开放API 发起对话，返回块内容或生成器"""
 
         # 获取当前应用 应用状态是否已发布
@@ -133,8 +133,14 @@ class OpenApiService(BaseService):
             # 处理流式响应
             agent_thoughts = {}
 
-            def handle_stream() -> Generator:
+            def handle_stream(
+                    end_user_id: str,
+                    conversation_id: str,
+                    message_id: str,
+                    account_id: str,
+                    app_id: str) -> Generator:
                 """函数返回 yield 作为生成器"""
+
                 for agent_thought in agent.stream(agent_state):
                     event_id = str(agent_thought.id)
                     # agent_thought 填充数据 除 agent_message 外的消息都进行覆盖处理
@@ -150,15 +156,14 @@ class OpenApiService(BaseService):
                                 })
                         else:
                             agent_thoughts[event_id] = agent_thought
-
                     data = {
                         **agent_thought.model_dump(include={
                             "event", "thought", "observation", "tool", "tool_input", "answer", "latency",
                         }),
                         "id": event_id,
-                        "end_user_id": str(end_user.id),
-                        "conversation_id": str(conversation.id),
-                        "message_id": str(message.id),
+                        "end_user_id": end_user_id,
+                        "conversation_id": conversation_id,
+                        "message_id": message_id,
                         "task_id": str(agent_thought.task_id),
                     }
                     yield f"event: {agent_thought.event}\ndata: {json.dumps(data)}\n\n"
@@ -166,16 +171,22 @@ class OpenApiService(BaseService):
                 # 将消息以及推理过程添加到数据库记录
                 thread = Thread(target=self.conversation_service.save_agent_thoughts, kwargs={
                     "flask_app": current_app._get_current_object(),
-                    "account_id": account.id,
-                    "app_id": app.id,
+                    "account_id": account_id,
+                    "app_id": app_id,
                     "app_config": app_config,
-                    "conversation_id": conversation.id,
-                    "message_id": message.id,
+                    "conversation_id": conversation_id,
+                    "message_id": message_id,
                     "agent_thoughts": [agent_thought for agent_thought in agent_thoughts.values()],
                 })
                 thread.start()
 
-            return handle_stream()
+            end_user_id = str(end_user.id)
+            conversation_id = str(conversation.id)
+            message_id = str(message.id)
+            account_id = account.id
+            app_id = app.id
+
+            return handle_stream(end_user_id, conversation_id, message_id, account_id, app_id)
 
         # 块内容输出 并将消息和推理过程添加到数据库
         agent_result = agent.invoke(agent_state)
