@@ -11,7 +11,7 @@ from flask import Flask, Blueprint
 from injector import inject
 
 from internal.handler import (
-    AppHandler, BuiltinToolHandler, ApiToolHandler, UploadFileHandler,
+    AppHandler, BuiltinAppHandler, BuiltinToolHandler, ApiToolHandler, UploadFileHandler,
     DatasetHandler, DocumentHandler, SegmentHandler, OAuthHandler, AuthHandler, AccountHandler, AIHandler,
     ApiKeyHandler, OpenApiHandler)
 
@@ -24,6 +24,7 @@ class Router:
     oauth_handler: OAuthHandler
     account_handler: AccountHandler
     app_handler: AppHandler
+    builtin_app_handler: BuiltinAppHandler
     builtin_tool_handler: BuiltinToolHandler
     api_tool_handler: ApiToolHandler
     upload_file_handler: UploadFileHandler
@@ -90,6 +91,12 @@ class Router:
         bp.add_url_rule("/apps/<uuid:app_id>/conversations", methods=["POST"], view_func=self.app_handler.debug_chat)
         bp.add_url_rule("/apps/<uuid:app_id>/conversations/tasks/<uuid:task_id>/stop", methods=["POST"],
                         view_func=self.app_handler.stop_debug_chat)
+
+        # 内置应用模块
+        bp.add_url_rule("/builtin-apps/categories", view_func=self.builtin_app_handler.get_builtin_app_categories)
+        bp.add_url_rule("/builtin-apps", view_func=self.builtin_app_handler.get_builtin_apps)
+        bp.add_url_rule("/builtin-apps/add-builtin-app-to-space", methods=["POST"],
+                        view_func=self.builtin_app_handler.add_builtin_app_to_space)
 
         # 内置插件 模块
         bp.add_url_rule("/builtin-tools", view_func=self.builtin_tool_handler.get_builtin_tools)
