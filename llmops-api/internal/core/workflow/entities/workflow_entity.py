@@ -7,7 +7,7 @@
 """
 from typing import Annotated, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .node_entity import NodeResult
 
@@ -30,8 +30,8 @@ class WorkflowConfig(BaseModel):
     """工作流配置信息"""
     name: str = ""  # 工作流名称
     description: str = ""  # 工作流描述
-    # nodes: list[dict[str, str]] = Field(default_factory=list)  # 工作流节点信息列表
-    # edges: list[dict[str, str]] = Field(default_factory=list)  # 工作流边信息列表
+    nodes: list[Any] = Field(default_factory=list)  # 工作流节点信息列表
+    edges: list[Any] = Field(default_factory=list)  # 工作流边信息列表
 
 
 class WorkflowState(BaseModel):
