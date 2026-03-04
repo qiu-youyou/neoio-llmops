@@ -14,13 +14,13 @@ from internal.core.workflow.entities.node_entity import NodeResult, NodeStatus
 from internal.core.workflow.entities.variable_entity import VARIABLE_TYPE_DEFAULT_VALUE_MAP
 from internal.core.workflow.entities.workflow_entity import WorkflowState
 from internal.core.workflow.nodes.base_node import BaseNode
-from internal.core.workflow.nodes.start.start_entity import StartNodeData
 from internal.exception import FailException
+from .start_entity import StartNodeData
 
 
 class StartNode(BaseNode):
     """开始节点"""
-    node_data = StartNodeData
+    node_data: StartNodeData
 
     def invoke(
             self,
@@ -35,7 +35,8 @@ class StartNode(BaseNode):
         # 提取并校验输入中的数据
         outputs_dict = {}
         for input in inputs:
-            input_value = state["inputs"].get(input.name, None)
+
+            input_value = state.inputs.get(input.name, None)
             if input_value is None:
                 if input.required:
                     raise FailException(f"工作流参数错误，{input.type}为必填参数")
@@ -46,7 +47,7 @@ class StartNode(BaseNode):
         return {"node_results": [NodeResult(
             node_data=self.node_data,
             status=NodeStatus.SUCCEEDED,
-            inputs=state["inputs"],
+            inputs=state.inputs,
             outputs=outputs_dict,
             latency=(time.perf_counter() - start_at)
         )]}

@@ -9,11 +9,11 @@ from typing import Any
 
 from langchain_core.runnables import RunnableConfig
 
+from internal.core.workflow.entities.node_entity import NodeResult, NodeStatus
+from internal.core.workflow.entities.variable_entity import VariableValueType, VARIABLE_TYPE_DEFAULT_VALUE_MAP
+from internal.core.workflow.entities.workflow_entity import WorkflowState
 from internal.core.workflow.nodes.base_node import BaseNode
 from .end_entity import EndNodeData
-from ...entities.node_entity import NodeResult, NodeStatus
-from ...entities.variable_entity import VariableValueType, VARIABLE_TYPE_DEFAULT_VALUE_MAP
-from ...entities.workflow_entity import WorkflowState
 
 
 class EndNode(BaseNode):
@@ -34,7 +34,7 @@ class EndNode(BaseNode):
             if output.value.type == VariableValueType.LITERAL:
                 outputs_dict[output.name] = output.value.content
             else:
-                for node_result in state["node_results"]:
+                for node_result in state.node_results:
                     if node_result.node_data.id == output.value.content.ref_node_id:
                         outputs_dict[output.name] = node_result.outputs.get(
                             output.value.content.ref_var_name,

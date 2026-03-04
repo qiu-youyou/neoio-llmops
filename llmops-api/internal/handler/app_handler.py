@@ -367,7 +367,7 @@ class AppHandler:
                         "type": "string",
                         "value": {
                             "type": "literal",
-                            "content": "泽辉呀",
+                            "content": "Youyou",
                         }
                     }
                 ]
@@ -387,4 +387,12 @@ class AppHandler:
             edges=edges,
         ))
         result = workflow.invoke({"query": "你好"})
-        return success_json(**result)
+        return success_json({
+            **result,
+            "info": {
+                "name": workflow.name,
+                "description": workflow.description,
+                "args_schema": workflow.args_schema.model_json_schema(),
+            },
+            "node_results": [node_result.dict() for node_result in result["node_results"]]
+        })

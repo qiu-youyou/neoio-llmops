@@ -5,3 +5,7 @@
 @Time   :   2026/3/2
 @Author :   s.qiu@foxmail.com
 """
+from .end_entity import EndNodeData
+from .end_node import EndNode
+
+__all__ = ["EndNode", "EndNodeData"]

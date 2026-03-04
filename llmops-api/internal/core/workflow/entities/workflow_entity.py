@@ -38,4 +38,4 @@ class WorkflowState(BaseModel):
     """工作流程序状态"""
     inputs: Annotated[dict[str, Any], _process_dict]  # 工作流状态输入
     outputs: Annotated[dict[str, Any], _process_dict]  # 工作流状态输出
-    node_results: Annotated[dict[str, Any], _process_node_results]  # 各节点点的运行结果
+    node_results: Annotated[list[NodeResult], _process_node_results]  # 各节点点的运行结果
