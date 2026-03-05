@@ -14,7 +14,7 @@ from pydantic import PrivateAttr, BaseModel, Field, create_model
 from .entities.node_entity import NodeType
 from .entities.variable_entity import VARIABLE_TYPE_MAP
 from .entities.workflow_entity import WorkflowConfig, WorkflowState
-from .nodes import EndNode, StartNode
+from .nodes import EndNode, StartNode, LLMNode
 
 
 class Workflow(BaseTool):
@@ -53,7 +53,7 @@ class Workflow(BaseTool):
                 fields[field_name] = (Optional[field_type], Field(default=None, description=field_description))
 
         return create_model("DynamicModel", **fields)
-    
+
     def _build_workflow(self) -> CompiledStateGraph:
         """构建工作流图程序"""
         graph = StateGraph(WorkflowState)
@@ -66,6 +66,8 @@ class Workflow(BaseTool):
             node_flag = f"{node.get('node_type')}_{node.get('id')}"
             if node.get('node_type') == NodeType.START:
                 graph.add_node(node_flag, StartNode(node_data=node))
+            elif node.get('node_type') == NodeType.LLM:
+                graph.add_node(node_flag, LLMNode(node_data=node))
             elif node.get('node_type') == NodeType.END:
                 graph.add_node(node_flag, EndNode(node_data=node))
 

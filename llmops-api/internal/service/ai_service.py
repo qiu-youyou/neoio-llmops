@@ -37,7 +37,7 @@ class AIService(BaseService):
             ("system", OPTIMIZE_PROMPT_TEMPLATE),
             ("human", "{prompt}")
         ])
-        llm = ChatOpenAI(model="kimi-k2-0905-preview", temperature=0.5)
+        llm = ChatOpenAI(model="glm-4.7", temperature=0.5)
         chain = prompt_template | llm | StrOutputParser()
 
         # 调用流事件返回

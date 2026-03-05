@@ -2,7 +2,7 @@
 # -*- encoding: utf-8 -*-
 """
 @File   :   llm-entity
-@Time   :   2026/3/4 15:29
+@Time   :   2026/3/4
 @Author :   s.qiu@foxmail.com
 """
 from typing import Any

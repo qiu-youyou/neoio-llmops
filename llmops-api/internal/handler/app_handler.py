@@ -201,7 +201,7 @@ class AppHandler:
             # 创建聊天、工具、路由节点
             def chatbot(state: MessagesState) -> MessagesState:
                 """聊天对话节点"""
-                llm = ChatOpenAI(model="kimi-k2-0905-preview", temperature=0.7).bind_tools(tools)
+                llm = ChatOpenAI(model="glm-4.7", temperature=0.7).bind_tools(tools)
 
                 # 获取流式输出内容
                 is_first_chunk = True  # 是否是第一个块
@@ -335,6 +335,51 @@ class AppHandler:
                 ]
             },
             {
+                "id": "eba75e0b-21b7-46ed-8d21-791724f0740f",
+                "node_type": "llm",
+                "title": "大语言模型",
+                "description": "",
+                "inputs": [
+                    {
+                        "name": "query",
+                        "type": "string",
+                        "value": {
+                            "type": "ref",
+                            "content": {
+                                "ref_node_id": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
+                                "ref_var_name": "query",
+                            },
+                        }
+                    },
+                    {
+                        "name": "context",
+                        "type": "string",
+                        "value": {
+                            "type": "ref",
+                            "content": {
+                                "ref_node_id": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
+                                "ref_var_name": "location",
+                            },
+                        }
+                    },
+                ],
+                "prompt": (
+                    "你是一个强有力的AI机器人，请根据用户的提问回复特定的内容，用户的提问是: {{query}}。\n\n"
+                    "如果有必要，可以使用上下文内容进行回复，上下文内容:\n\n<context>{{context}}</context>"
+                ),
+                "model_config": {
+                    "provider": "openai",
+                    "model": "glm-4.7",
+                    "parameters": {
+                        "temperature": 0.5,
+                        "top_p": 0.85,
+                        "frequency_penalty": 0.2,
+                        "presence_penalty": 0.2,
+                        "max_tokens": 8192,
+                    },
+                }
+            },
+            {
                 "id": "860c8411-37ed-4872-b53f-30afa0290211",
                 "node_type": "end",
                 "title": "结束",
@@ -363,23 +408,35 @@ class AppHandler:
                         }
                     },
                     {
-                        "name": "username",
+                        "name": "llm_output",
                         "type": "string",
                         "value": {
-                            "type": "literal",
-                            "content": "Youyou",
+                            "type": "ref",
+                            "content": {
+                                "ref_node_id": "eba75e0b-21b7-46ed-8d21-791724f0740f",
+                                "ref_var_name": "output",
+                            }
                         }
                     }
                 ]
             },
         ]
-        edges = [{
-            "id": "675fca50-1228-8008-82dc-0c714158534c",
-            "source": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
-            "source_type": "start",
-            "target": "860c8411-37ed-4872-b53f-30afa0290211",
-            "target_type": "end",
-        }]
+        edges = [
+            {
+                "id": "675fca50-1228-8008-82dc-0c714158534c",
+                "source": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
+                "source_type": "start",
+                "target": "eba75e0b-21b7-46ed-8d21-791724f0740f",
+                "target_type": "llm",
+            },
+            {
+                "id": "675fcd37-f308-8008-a6f4-389a0b1ed0ca",
+                "source": "eba75e0b-21b7-46ed-8d21-791724f0740f",
+                "source_type": "llm",
+                "target": "860c8411-37ed-4872-b53f-30afa0290211",
+                "target_type": "end",
+            }
+        ]
         workflow = Workflow(workflow_config=WorkflowConfig(
             name="workflow",
             description="工作流组件",

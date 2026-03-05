@@ -33,7 +33,7 @@ class ConversationService(BaseService):
     def summary(self, human_message: str, ai_message: str, old_summary: str = "") -> str:
         """根据消息和旧的摘要生成 新摘要"""
         prompt = ChatPromptTemplate.from_template(SUMMARIZER_TEMPLATE)
-        llm = ChatOpenAI(model="kimi-k2-0905-preview", temperature=0.5)
+        llm = ChatOpenAI(model="glm-4.7", temperature=0.5)
         # 构建链应用
         chain = prompt | llm | StrOutputParser()
         new_summary = chain.invoke({
@@ -51,7 +51,7 @@ class ConversationService(BaseService):
             ("system", CONVERSATION_NAME_TEMPLATE),
             ("human", "{query}")
         ])
-        llm = ChatOpenAI(model="kimi-k2-0905-preview", temperature=0)
+        llm = ChatOpenAI(model="glm-4.7", temperature=0)
         structured_llm = llm.with_structured_output(ConversationInfo)
         chain = prompt | structured_llm
 
@@ -81,7 +81,7 @@ class ConversationService(BaseService):
             ("system", SUGGESTED_QUESTIONS_TEMPLATE),
             ("human", "{histories}")
         ])
-        llm = ChatOpenAI(model="kimi-k2-0905-preview", temperature=0)
+        llm = ChatOpenAI(model="glm-4.7", temperature=0)
         structured_llm = llm.with_structured_output(SuggestedQuestions)
         chain = prompt | structured_llm
         suggested_questions = chain.invoke({"histories": histories})
