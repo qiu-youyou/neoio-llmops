@@ -14,8 +14,8 @@ from langchain_core.runnables import RunnableConfig
 from internal.core.workflow.entities.node_entity import NodeStatus, NodeResult
 from internal.core.workflow.entities.workflow_entity import WorkflowState
 from internal.core.workflow.nodes import BaseNode
+from internal.core.workflow.utils.helper import extract_variables_from_state
 from .template_transform_entity import TemplateTransformNodeData
-from ...utils.helper import extract_variables_from_state
 
 
 class TemplateTransformNode(BaseNode):

@@ -12,11 +12,11 @@ from jinja2 import Template
 from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 
+from internal.core.workflow.entities.node_entity import NodeResult, NodeStatus
 from internal.core.workflow.entities.workflow_entity import WorkflowState
 from internal.core.workflow.nodes import BaseNode
 from internal.core.workflow.utils.helper import extract_variables_from_state
 from .llm_entity import LLMNodeData
-from ...entities.node_entity import NodeResult, NodeStatus
 
 
 class LLMNode(BaseNode):

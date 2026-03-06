@@ -6,6 +6,7 @@
 @Author :   s.qiu@foxmail.com
 """
 from .base_node import BaseNode
+from .code import CodeNode, CodeNodeData
 from .dataset_retrieval import DatasetRetrievalNodeData, DatasetRetrievalNode
 from .end.end_node import EndNode, EndNodeData
 from .llm import LLMNode, LLMNodeData
@@ -18,5 +19,7 @@ __all__ = [
     "LLMNode", "LLMNodeData",
     "EndNode", "EndNodeData",
     "TemplateTransformNode", "TemplateTransformNodeData",
-    "DatasetRetrievalNodeData", "DatasetRetrievalNode"
+    "DatasetRetrievalNodeData", "DatasetRetrievalNode",
+    "CodeNode", "CodeNodeData",
+
 ]

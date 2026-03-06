@@ -320,7 +320,7 @@ class AppHandler:
                         "value": {
                             "type": "generated",
                             "content": "",
-                        }
+                        },
                     },
                     {
                         "name": "location",
@@ -330,9 +330,9 @@ class AppHandler:
                         "value": {
                             "type": "generated",
                             "content": "",
-                        }
+                        },
                     },
-                ]
+                ],
             },
             {
                 "id": "868b5769-1925-4e7b-8aa4-af7c3d444d91",
@@ -369,7 +369,7 @@ class AppHandler:
                                 "ref_node_id": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
                                 "ref_var_name": "query",
                             },
-                        }
+                        },
                     },
                     {
                         "name": "context",
@@ -380,7 +380,7 @@ class AppHandler:
                                 "ref_node_id": "868b5769-1925-4e7b-8aa4-af7c3d444d91",
                                 "ref_var_name": "combine_documents",
                             },
-                        }
+                        },
                     },
                 ],
                 "prompt": (
@@ -397,7 +397,7 @@ class AppHandler:
                         "presence_penalty": 0.2,
                         "max_tokens": 8192,
                     },
-                }
+                },
             },
             {
                 "id": "623b7671-0bc2-446c-bf5e-5e25032a522e",
@@ -431,6 +431,39 @@ class AppHandler:
                 "template": "地址: {{location}}\n提问内容: {{query}}",
             },
             {
+                "id": "4a9ed43d-e886-49f7-af9f-9e85d83b27aa",
+                "node_type": "code",
+                "title": "代码",
+                "description": "",
+                "inputs": [
+                    {
+                        "name": "combine_documents",
+                        "type": "string",
+                        "value": {
+                            "type": "ref",
+                            "content": {
+                                "ref_node_id": "868b5769-1925-4e7b-8aa4-af7c3d444d91",
+                                "ref_var_name": "combine_documents",
+                            },
+                        },
+                    },
+                ],
+                "code": """def main(params):
+    return {
+        "first_100_documents": params.get("combine_documents", "")[:100]
+    }""",
+                "outputs": [
+                    {
+                        "name": "first_100_documents",
+                        "type": "string",
+                        "value": {
+                            "type": "generated",
+                            "content": "",
+                        },
+                    }
+                ],
+            },
+            {
                 "id": "860c8411-37ed-4872-b53f-30afa0290211",
                 "node_type": "end",
                 "title": "结束",
@@ -445,7 +478,7 @@ class AppHandler:
                                 "ref_node_id": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
                                 "ref_var_name": "query",
                             },
-                        }
+                        },
                     },
                     {
                         "name": "location",
@@ -456,7 +489,15 @@ class AppHandler:
                                 "ref_node_id": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
                                 "ref_var_name": "location",
                             },
-                        }
+                        },
+                    },
+                    {
+                        "name": "username",
+                        "type": "string",
+                        "value": {
+                            "type": "literal",
+                            "content": "Youyou",
+                        },
                     },
                     {
                         "name": "llm_output",
@@ -466,13 +507,36 @@ class AppHandler:
                             "content": {
                                 "ref_node_id": "eba75e0b-21b7-46ed-8d21-791724f0740f",
                                 "ref_var_name": "output",
-                            }
-                        }
+                            },
+                        },
+                    },
+                    {
+                        "name": "template_combine",
+                        "type": "string",
+                        "value": {
+                            "type": "ref",
+                            "content": {
+                                "ref_node_id": "623b7671-0bc2-446c-bf5e-5e25032a522e",
+                                "ref_var_name": "output",
+                            },
+                        },
+                    },
+                    {
+                        "name": "first_100_documents",
+                        "type": "string",
+                        "value": {
+                            "type": "ref",
+                            "content": {
+                                "ref_node_id": "4a9ed43d-e886-49f7-af9f-9e85d83b27aa",
+                                "ref_var_name": "first_100_documents",
+                            },
+                        },
                     }
-                ]
+                ],
             },
         ]
         edges = [
+            # 并行线路1
             {
                 "id": "675fca50-1228-8008-82dc-0c714158534c",
                 "source": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
@@ -481,27 +545,36 @@ class AppHandler:
                 "target_type": "dataset_retrieval",
             },
             {
-                "id": "675fca50-1228-8008-82dc-0c714158534c",
+                "id": "675fcd37-f308-8008-a6f4-389a0b1ed0ca",
                 "source": "868b5769-1925-4e7b-8aa4-af7c3d444d91",
                 "source_type": "dataset_retrieval",
                 "target": "eba75e0b-21b7-46ed-8d21-791724f0740f",
                 "target_type": "llm",
             },
             {
-                "id": "675fcd37-f308-8008-a6f4-389a0b1ed0ca",
+                "id": "675f90b4-7bb8-8008-8b72-ba26ce50951c",
                 "source": "eba75e0b-21b7-46ed-8d21-791724f0740f",
                 "source_type": "llm",
                 "target": "623b7671-0bc2-446c-bf5e-5e25032a522e",
                 "target_type": "template_transform",
             },
             {
-                "id": "675f90b4-7bb8-8008-8b72-ba26ce50951c",
+                "id": "675fa28c-6f94-8008-b5ae-2eba3300b2e6",
                 "source": "623b7671-0bc2-446c-bf5e-5e25032a522e",
                 "source_type": "template_transform",
+                "target": "4a9ed43d-e886-49f7-af9f-9e85d83b27aa",
+                "target_type": "code",
+            },
+            {
+                "id": "675f9964-0028-8008-8046-d017996f3d3c",
+                "source": "4a9ed43d-e886-49f7-af9f-9e85d83b27aa",
+                "source_type": "code",
                 "target": "860c8411-37ed-4872-b53f-30afa0290211",
                 "target_type": "end",
-            }
+            },
+
         ]
+
         workflow = Workflow(workflow_config=WorkflowConfig(
             name="workflow",
             description="工作流组件",

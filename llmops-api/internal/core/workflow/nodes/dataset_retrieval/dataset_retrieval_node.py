@@ -14,11 +14,11 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
 from pydantic import PrivateAttr
 
+from internal.core.workflow.entities.node_entity import NodeResult, NodeStatus
+from internal.core.workflow.entities.workflow_entity import WorkflowState
 from internal.core.workflow.nodes import BaseNode
+from internal.core.workflow.utils.helper import extract_variables_from_state
 from .dataset_retrieval_entity import DatasetRetrievalNodeData
-from ...entities.node_entity import NodeResult, NodeStatus
-from ...entities.workflow_entity import WorkflowState
-from ...utils.helper import extract_variables_from_state
 
 
 class DatasetRetrievalNode(BaseNode):
