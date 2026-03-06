@@ -43,10 +43,12 @@ class EndNode(BaseNode):
         # 组装状态返回
         return {
             "outputs": outputs_dict,
-            "node_results": [NodeResult(
-                node_data=self.node_data,
-                status=NodeStatus.SUCCEEDED,
-                inputs={},
-                outputs=outputs_dict
-            )]
+            "node_results": [
+                NodeResult(
+                    node_data=self.node_data,
+                    status=NodeStatus.SUCCEEDED,
+                    inputs={},
+                    outputs=outputs_dict
+                )
+            ]
         }

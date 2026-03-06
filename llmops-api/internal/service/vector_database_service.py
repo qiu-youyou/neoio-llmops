@@ -2,7 +2,7 @@
 # -*- encoding: utf-8 -*-
 """
 @File   :   vector_database_service
-@Time   :   2025/12/19 09:03
+@Time   :   2025/12/19 
 @Author :   s.qiu@foxmail.com
 """
 import os

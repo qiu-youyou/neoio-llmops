@@ -7,6 +7,7 @@
 """
 from typing import Any, Optional
 
+from flask import current_app
 from langchain_core.tools import BaseTool
 from langgraph.graph.state import CompiledStateGraph, StateGraph
 from pydantic import PrivateAttr, BaseModel, Field, create_model
@@ -14,7 +15,7 @@ from pydantic import PrivateAttr, BaseModel, Field, create_model
 from .entities.node_entity import NodeType
 from .entities.variable_entity import VARIABLE_TYPE_MAP
 from .entities.workflow_entity import WorkflowConfig, WorkflowState
-from .nodes import EndNode, StartNode, LLMNode, TemplateTransformNode
+from .nodes import StartNode, EndNode, DatasetRetrievalNode, LLMNode, TemplateTransformNode
 
 
 class Workflow(BaseTool):
@@ -66,6 +67,11 @@ class Workflow(BaseTool):
             node_flag = f"{node.get('node_type')}_{node.get('id')}"
             if node.get('node_type') == NodeType.START:
                 graph.add_node(node_flag, StartNode(node_data=node))
+            elif node.get('node_type') == NodeType.DATASET_RETRIEVAL:
+                graph.add_node(node_flag, DatasetRetrievalNode(
+                    flask_app=current_app._get_current_object(),
+                    account_id=self._workflow_config.account_id,
+                    node_data=node))
             elif node.get('node_type') == NodeType.LLM:
                 graph.add_node(node_flag, LLMNode(node_data=node))
             elif node.get('node_type') == NodeType.TEMPLATE_TRANSFORM:

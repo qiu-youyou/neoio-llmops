@@ -122,13 +122,13 @@ class EmbeddingsService:
     @property
     def embeddings(self) -> Embeddings:
         """获取原始 embeddings，自动触发加载"""
-        # if self._embeddings is None:
-        #     self._load_model()
-        # return self._embeddings
+        if self._embeddings is None:
+            self._load_model()
+        return self._embeddings
 
     @property
     def cache_backed_embeddings(self) -> CacheBackedEmbeddings:
         """获取带缓存的 embeddings，自动触发加载"""
-        # if self._cache_backed_embeddings is None:
-        #     self._load_model()
-        # return self._cache_backed_embeddings
+        if self._cache_backed_embeddings is None:
+            self._load_model()
+        return self._cache_backed_embeddings

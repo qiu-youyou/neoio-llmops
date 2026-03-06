@@ -335,6 +335,26 @@ class AppHandler:
                 ]
             },
             {
+                "id": "868b5769-1925-4e7b-8aa4-af7c3d444d91",
+                "node_type": "dataset_retrieval",
+                "title": "知识库检索",
+                "description": "",
+                "inputs": [
+                    {
+                        "name": "query",
+                        "type": "string",
+                        "value": {
+                            "type": "ref",
+                            "content": {
+                                "ref_node_id": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
+                                "ref_var_name": "query",
+                            },
+                        },
+                    }
+                ],
+                "dataset_ids": ["d9baab72-9e23-449a-8513-5acd9e235f33"],
+            },
+            {
                 "id": "eba75e0b-21b7-46ed-8d21-791724f0740f",
                 "node_type": "llm",
                 "title": "大语言模型",
@@ -357,8 +377,8 @@ class AppHandler:
                         "value": {
                             "type": "ref",
                             "content": {
-                                "ref_node_id": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
-                                "ref_var_name": "location",
+                                "ref_node_id": "868b5769-1925-4e7b-8aa4-af7c3d444d91",
+                                "ref_var_name": "combine_documents",
                             },
                         }
                     },
@@ -457,6 +477,13 @@ class AppHandler:
                 "id": "675fca50-1228-8008-82dc-0c714158534c",
                 "source": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
                 "source_type": "start",
+                "target": "868b5769-1925-4e7b-8aa4-af7c3d444d91",
+                "target_type": "dataset_retrieval",
+            },
+            {
+                "id": "675fca50-1228-8008-82dc-0c714158534c",
+                "source": "868b5769-1925-4e7b-8aa4-af7c3d444d91",
+                "source_type": "dataset_retrieval",
                 "target": "eba75e0b-21b7-46ed-8d21-791724f0740f",
                 "target_type": "llm",
             },
@@ -480,6 +507,7 @@ class AppHandler:
             description="工作流组件",
             nodes=nodes,
             edges=edges,
+            account_id=current_user.id
         ))
         result = workflow.invoke({"query": "你好", "location": "广州"})
         return success_json({

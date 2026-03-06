@@ -2,7 +2,7 @@
 # -*- encoding: utf-8 -*-
 """
 @File   :   retrieval_service
-@Time   :   2026/1/16 16:55
+@Time   :   2026/1/16
 @Author :   s.qiu@foxmail.com
 """
 from dataclasses import dataclass

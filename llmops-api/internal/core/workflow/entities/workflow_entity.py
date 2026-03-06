@@ -6,6 +6,7 @@
 @Author :   s.qiu@foxmail.com
 """
 from typing import Annotated, Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -28,6 +29,7 @@ def _process_node_results(left: list[NodeResult], right: list[NodeResult]) -> li
 
 class WorkflowConfig(BaseModel):
     """工作流配置信息"""
+    account_id: UUID
     name: str = ""  # 工作流名称
     description: str = ""  # 工作流描述
     nodes: list[Any] = Field(default_factory=list)  # 工作流节点信息列表

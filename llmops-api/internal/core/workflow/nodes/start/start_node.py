@@ -44,10 +44,13 @@ class StartNode(BaseNode):
                     input_value = VARIABLE_TYPE_DEFAULT_VALUE_MAP.get(input.type)
             outputs_dict[input.name] = input_value
 
-        return {"node_results": [NodeResult(
-            node_data=self.node_data,
-            status=NodeStatus.SUCCEEDED,
-            inputs=state.inputs,
-            outputs=outputs_dict,
-            latency=(time.perf_counter() - start_at)
-        )]}
+        return {
+            "node_results": [
+                NodeResult(
+                    node_data=self.node_data,
+                    status=NodeStatus.SUCCEEDED,
+                    inputs=state.inputs,
+                    outputs=outputs_dict,
+                    latency=(time.perf_counter() - start_at)
+                )
+            ]}

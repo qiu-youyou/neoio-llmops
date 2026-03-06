@@ -27,7 +27,7 @@ class TemplateTransformNode(BaseNode):
             state: WorkflowState,
             config: RunnableConfig | None = None,
             **kwargs: Any,
-    ) -> WorkflowState:x
+    ) -> WorkflowState:
         """模板转换节点 执行函数"""
         start_at = time.perf_counter()
         inputs_dict = extract_variables_from_state(self.node_data.inputs, state)

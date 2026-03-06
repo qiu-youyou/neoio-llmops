@@ -2,7 +2,7 @@
 # -*- encoding: utf-8 -*-
 """
 @File   :   __init__.py
-@Time   :   2025/9/17 16:21
+@Time   :   2025/9/17
 @Author :   s.qiu@foxmail.com
 """
 from .account_service import AccountService
@@ -26,6 +26,7 @@ from .keyword_table_service import KeywordTableService
 from .oauth_service import OAuthService
 from .openapi_service import OpenApiService
 from .process_rule_service import ProcessRuleService
+from .retrieval_service import RetrievalService
 from .segment_service import SegmentService
 from .upload_file_service import UploadFileService
 from .vector_database_service import VectorDatabaseService
@@ -44,6 +45,7 @@ __all__ = [
     "CosService",
     "UploadFileService",
     "DatasetService",
+    "RetrievalService",
     "EmbeddingsService",
     "JiebaService",
     "DocumentService",
