@@ -14,7 +14,7 @@ from pydantic import PrivateAttr, BaseModel, Field, create_model
 from .entities.node_entity import NodeType
 from .entities.variable_entity import VARIABLE_TYPE_MAP
 from .entities.workflow_entity import WorkflowConfig, WorkflowState
-from .nodes import EndNode, StartNode, LLMNode
+from .nodes import EndNode, StartNode, LLMNode, TemplateTransformNode
 
 
 class Workflow(BaseTool):
@@ -68,6 +68,8 @@ class Workflow(BaseTool):
                 graph.add_node(node_flag, StartNode(node_data=node))
             elif node.get('node_type') == NodeType.LLM:
                 graph.add_node(node_flag, LLMNode(node_data=node))
+            elif node.get('node_type') == NodeType.TEMPLATE_TRANSFORM:
+                graph.add_node(node_flag, TemplateTransformNode(node_data=node))
             elif node.get('node_type') == NodeType.END:
                 graph.add_node(node_flag, EndNode(node_data=node))
 

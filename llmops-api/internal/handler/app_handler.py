@@ -380,6 +380,37 @@ class AppHandler:
                 }
             },
             {
+                "id": "623b7671-0bc2-446c-bf5e-5e25032a522e",
+                "node_type": "template_transform",
+                "title": "模板转换",
+                "description": "",
+                "inputs": [
+                    {
+                        "name": "location",
+                        "type": "string",
+                        "value": {
+                            "type": "ref",
+                            "content": {
+                                "ref_node_id": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
+                                "ref_var_name": "location",
+                            },
+                        },
+                    },
+                    {
+                        "name": "query",
+                        "type": "string",
+                        "value": {
+                            "type": "ref",
+                            "content": {
+                                "ref_node_id": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
+                                "ref_var_name": "query",
+                            },
+                        },
+                    },
+                ],
+                "template": "地址: {{location}}\n提问内容: {{query}}",
+            },
+            {
                 "id": "860c8411-37ed-4872-b53f-30afa0290211",
                 "node_type": "end",
                 "title": "结束",
@@ -433,6 +464,13 @@ class AppHandler:
                 "id": "675fcd37-f308-8008-a6f4-389a0b1ed0ca",
                 "source": "eba75e0b-21b7-46ed-8d21-791724f0740f",
                 "source_type": "llm",
+                "target": "623b7671-0bc2-446c-bf5e-5e25032a522e",
+                "target_type": "template_transform",
+            },
+            {
+                "id": "675f90b4-7bb8-8008-8b72-ba26ce50951c",
+                "source": "623b7671-0bc2-446c-bf5e-5e25032a522e",
+                "source_type": "template_transform",
                 "target": "860c8411-37ed-4872-b53f-30afa0290211",
                 "target_type": "end",
             }
@@ -443,7 +481,7 @@ class AppHandler:
             nodes=nodes,
             edges=edges,
         ))
-        result = workflow.invoke({"query": "你好"})
+        result = workflow.invoke({"query": "你好", "location": "广州"})
         return success_json({
             **result,
             "info": {

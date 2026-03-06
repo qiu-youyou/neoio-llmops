@@ -35,7 +35,6 @@ class EndNode(BaseNode):
                 outputs_dict[output.name] = output.value.content
             else:
                 for node_result in state.node_results:
-                    print(output.value.content.ref_node_id)
                     if node_result.node_data.id == output.value.content.ref_node_id:
                         outputs_dict[output.name] = node_result.outputs.get(
                             output.value.content.ref_var_name,
