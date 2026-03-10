@@ -33,6 +33,7 @@ class ToolNode(BaseNode):
         """工具初始化"""
         super().__init__(*args, **kwargs)
         from app.http.module import injector
+
         # 内置工具 通过内置插件管理器获取
         if self.node_data.tool_type == "builtin_tool":
             from internal.core.tools.builtin_tools.providers import BuiltinProviderManager
@@ -76,7 +77,6 @@ class ToolNode(BaseNode):
         """工具插件执行节点"""
         start_at = time.perf_counter()
         inputs_dict = extract_variables_from_state(self.node_data.inputs, state)
-
         # 调用工具并获取结果
         try:
             result = self._tool.invoke(inputs_dict)
@@ -91,7 +91,6 @@ class ToolNode(BaseNode):
             outputs[self.node_data.outputs[0].name] = result
         else:
             outputs["text"] = result
-
         return {
             "node_results": [
                 NodeResult(

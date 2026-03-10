@@ -7,6 +7,7 @@
 """
 from typing import Any, Optional
 
+from flask import current_app
 from langchain_core.tools import BaseTool
 from langgraph.graph.state import CompiledStateGraph, StateGraph
 from pydantic import PrivateAttr, BaseModel, Field, create_model
@@ -78,17 +79,30 @@ class Workflow(BaseTool):
         for node in nodes:
             node_flag = f"{node.get('node_type')}_{node.get('id')}"
             if node.get("node_type") in NodeClasses.keys():
-                graph.add_node(node_flag, NodeClasses[node.get('node_type')](node_data=node))
+                if node.get("node_type") == NodeType.DATASET_RETRIEVAL:
+                    graph.add_node(node_flag, NodeClasses[node.get("node_type")](
+                        flask_app=current_app._get_current_object(),
+                        account_id=self._workflow_config.account_id,
+                        node_data=node))
+                else:
+                    graph.add_node(node_flag, NodeClasses[node.get("node_type")](node_data=node))
             else:
                 raise ValidateErrorException("工作流节点类型不存在！")
 
         # 遍历边
+        parallel_edges = {}  # key:终点，value:起点列表
         start_node = ""
         end_node = ""
         for edge in edges:
-            graph.add_edge(f"{edge.get('source_type')}_{edge.get('source')}",
-                           f"{edge.get('target_type')}_{edge.get('target')}")
+            source_node = f"{edge.get('source_type')}_{edge.get('source')}"
+            target_node = f"{edge.get('target_type')}_{edge.get('target')}"
 
+            if target_node not in parallel_edges:
+                parallel_edges[target_node] = [source_node]
+            else:
+                parallel_edges[target_node].append(source_node)
+
+            # 开始节点、结束节点
             if edge.get('source_type') == NodeType.START:
                 start_node = f"{edge.get('source_type')}_{edge.get('source')}"
             if edge.get('target_type') == NodeType.END:
@@ -96,7 +110,17 @@ class Workflow(BaseTool):
 
         graph.set_entry_point(start_node)
         graph.set_finish_point(end_node)
-        return graph.compile()
+
+        # 遍历合并边
+        for target_node, source_nodes in parallel_edges.items():
+            graph.add_edge(source_nodes, target_node)
+
+        workflow = graph.compile()
+        image_data = workflow.get_graph().draw_mermaid_png()
+        with open("workflow.png", "wb") as f:
+            f.write(image_data)
+
+        return workflow
 
     def _run(self, *args: Any, **kwargs: Any) -> Any:
         """工作流基础 Run 方法"""

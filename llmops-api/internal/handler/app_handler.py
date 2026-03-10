@@ -503,9 +503,29 @@ class AppHandler:
                 "title": "API工具",
                 "description": "",
                 "type": "api_tool",
-                "provider_id": "bde70d64-cbcc-47e7-a0f5-b51200b87c7c",
-                "tool_id": "BilibiliRs",
-                "inputs": [],
+                "provider_id": "a9bff90b-f75f-4386-9e8f-f92b6a9ad5bb",
+                "tool_id": "YoudaoSuggest",
+                "inputs": [
+                    {
+                        "name": "q",
+                        "type": "string",
+                        "value": {
+                            "type": "ref",
+                            "content": {
+                                "ref_node_id": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
+                                "ref_var_name": "query",
+                            },
+                        },
+                    },
+                    {
+                        "name": "doctype",
+                        "type": "string",
+                        "value": {
+                            "type": "literal",
+                            "content": "json",
+                        },
+                    }
+                ],
             },
             {
                 "id": "860c8411-37ed-4872-b53f-30afa0290211",
@@ -577,7 +597,7 @@ class AppHandler:
                         },
                     },
                     {
-                        "name": "bilibili",
+                        "name": "YoudaoSuggest",
                         "type": "string",
                         "value": {
                             "type": "ref",
