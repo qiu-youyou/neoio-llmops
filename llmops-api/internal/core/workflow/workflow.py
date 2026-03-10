@@ -116,9 +116,9 @@ class Workflow(BaseTool):
             graph.add_edge(source_nodes, target_node)
 
         workflow = graph.compile()
-        image_data = workflow.get_graph().draw_mermaid_png()
-        with open("workflow.png", "wb") as f:
-            f.write(image_data)
+        # image_data = workflow.get_graph().draw_mermaid_png()
+        # with open("workflow.png", "wb") as f:
+        #     f.write(image_data)
 
         return workflow
 
