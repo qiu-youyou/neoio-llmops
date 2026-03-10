@@ -7,15 +7,27 @@
 """
 from typing import Any, Optional
 
-from flask import current_app
 from langchain_core.tools import BaseTool
 from langgraph.graph.state import CompiledStateGraph, StateGraph
 from pydantic import PrivateAttr, BaseModel, Field, create_model
 
+from internal.exception import ValidateErrorException
 from .entities.node_entity import NodeType
 from .entities.variable_entity import VARIABLE_TYPE_MAP
 from .entities.workflow_entity import WorkflowConfig, WorkflowState
-from .nodes import StartNode, EndNode, DatasetRetrievalNode, LLMNode, TemplateTransformNode, CodeNode
+from .nodes import StartNode, EndNode, DatasetRetrievalNode, LLMNode, TemplateTransformNode, CodeNode, ToolNode, \
+    HttpRequestNode
+
+NodeClasses = {
+    NodeType.START: StartNode,
+    NodeType.END: EndNode,
+    NodeType.LLM: LLMNode,
+    NodeType.TEMPLATE_TRANSFORM: TemplateTransformNode,
+    NodeType.DATASET_RETRIEVAL: DatasetRetrievalNode,
+    NodeType.HTTP_REQUEST: HttpRequestNode,
+    NodeType.CODE: CodeNode,
+    NodeType.TOOL: ToolNode,
+}
 
 
 class Workflow(BaseTool):
@@ -65,35 +77,25 @@ class Workflow(BaseTool):
         # 遍历节点
         for node in nodes:
             node_flag = f"{node.get('node_type')}_{node.get('id')}"
-            if node.get('node_type') == NodeType.START:
-                graph.add_node(node_flag, StartNode(node_data=node))
-            elif node.get('node_type') == NodeType.DATASET_RETRIEVAL:
-                graph.add_node(node_flag, DatasetRetrievalNode(
-                    flask_app=current_app._get_current_object(),
-                    account_id=self._workflow_config.account_id,
-                    node_data=node))
-            elif node.get('node_type') == NodeType.CODE:
-                graph.add_node(node_flag, CodeNode(node_data=node))
-            elif node.get('node_type') == NodeType.LLM:
-                graph.add_node(node_flag, LLMNode(node_data=node))
-            elif node.get('node_type') == NodeType.TEMPLATE_TRANSFORM:
-                graph.add_node(node_flag, TemplateTransformNode(node_data=node))
-            elif node.get('node_type') == NodeType.END:
-                graph.add_node(node_flag, EndNode(node_data=node))
+            if node.get("node_type") in NodeClasses.keys():
+                graph.add_node(node_flag, NodeClasses[node.get('node_type')](node_data=node))
+            else:
+                raise ValidateErrorException("工作流节点类型不存在！")
 
         # 遍历边
+        start_node = ""
+        end_node = ""
         for edge in edges:
             graph.add_edge(f"{edge.get('source_type')}_{edge.get('source')}",
                            f"{edge.get('target_type')}_{edge.get('target')}")
 
             if edge.get('source_type') == NodeType.START:
                 start_node = f"{edge.get('source_type')}_{edge.get('source')}"
-                graph.set_entry_point(start_node)
-
             if edge.get('target_type') == NodeType.END:
                 end_node = f"{edge.get('target_type')}_{edge.get('target')}"
-                graph.set_finish_point(end_node)
 
+        graph.set_entry_point(start_node)
+        graph.set_finish_point(end_node)
         return graph.compile()
 
     def _run(self, *args: Any, **kwargs: Any) -> Any:

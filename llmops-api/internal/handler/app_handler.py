@@ -305,6 +305,7 @@ class AppHandler:
     def ping(self):
         from internal.core.workflow import Workflow
         from internal.core.workflow.entities.workflow_entity import WorkflowConfig
+
         nodes = [
             {
                 "id": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
@@ -352,7 +353,18 @@ class AppHandler:
                         },
                     }
                 ],
-                "dataset_ids": ["d9baab72-9e23-449a-8513-5acd9e235f33"],
+                "dataset_ids": [
+                    "d9baab72-9e23-449a-8513-5acd9e235f33"
+                ],
+            },
+            {
+                "id": "675fca50-1228-8008-82dc-0c714158534c",
+                "node_type": "http_request",
+                "title": "HTTP请求",
+                "description": "",
+                "url": "https://www.langchain.com/",
+                "method": "get",
+                "inputs": [],
             },
             {
                 "id": "eba75e0b-21b7-46ed-8d21-791724f0740f",
@@ -449,9 +461,9 @@ class AppHandler:
                     },
                 ],
                 "code": """def main(params):
-    return {
-        "first_100_documents": params.get("combine_documents", "")[:100]
-    }""",
+           return {
+               "first_100_documents": params.get("combine_documents", "")[:100]
+           }""",
                 "outputs": [
                     {
                         "name": "first_100_documents",
@@ -462,6 +474,38 @@ class AppHandler:
                         },
                     }
                 ],
+            },
+            {
+                "id": "2f6cf40d-0219-421b-92ff-229fdde15ecb",
+                "node_type": "tool",
+                "title": "内置工具",
+                "description": "",
+                "type": "builtin_tool",
+                "provider_id": "google",
+                "tool_id": "google_serper",
+                "inputs": [
+                    {
+                        "name": "query",
+                        "type": "string",
+                        "value": {
+                            "type": "ref",
+                            "content": {
+                                "ref_node_id": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
+                                "ref_var_name": "query",
+                            },
+                        },
+                    }
+                ],
+            },
+            {
+                "id": "e9fc1f95-1a59-4ba4-a87d-2ad349287234",
+                "node_type": "tool",
+                "title": "API工具",
+                "description": "",
+                "type": "api_tool",
+                "provider_id": "bde70d64-cbcc-47e7-a0f5-b51200b87c7c",
+                "tool_id": "BilibiliRs",
+                "inputs": [],
             },
             {
                 "id": "860c8411-37ed-4872-b53f-30afa0290211",
@@ -531,7 +575,51 @@ class AppHandler:
                                 "ref_var_name": "first_100_documents",
                             },
                         },
-                    }
+                    },
+                    {
+                        "name": "bilibili",
+                        "type": "string",
+                        "value": {
+                            "type": "ref",
+                            "content": {
+                                "ref_node_id": "e9fc1f95-1a59-4ba4-a87d-2ad349287234",
+                                "ref_var_name": "text",
+                            },
+                        },
+                    },
+                    {
+                        "name": "google_search_result",
+                        "type": "string",
+                        "value": {
+                            "type": "ref",
+                            "content": {
+                                "ref_node_id": "2f6cf40d-0219-421b-92ff-229fdde15ecb",
+                                "ref_var_name": "text",
+                            },
+                        },
+                    },
+                    {
+                        "name": "http_request_text",
+                        "type": "string",
+                        "value": {
+                            "type": "ref",
+                            "content": {
+                                "ref_node_id": "675fca50-1228-8008-82dc-0c714158534c",
+                                "ref_var_name": "text",
+                            },
+                        },
+                    },
+                    {
+                        "name": "http_request_status_code",
+                        "type": "int",
+                        "value": {
+                            "type": "ref",
+                            "content": {
+                                "ref_node_id": "675fca50-1228-8008-82dc-0c714158534c",
+                                "ref_var_name": "status_code",
+                            },
+                        },
+                    },
                 ],
             },
         ]
@@ -552,16 +640,9 @@ class AppHandler:
                 "target_type": "llm",
             },
             {
-                "id": "675f90b4-7bb8-8008-8b72-ba26ce50951c",
+                "id": "675fa28c-6f94-8008-b5ae-2eba3300b2e6",
                 "source": "eba75e0b-21b7-46ed-8d21-791724f0740f",
                 "source_type": "llm",
-                "target": "623b7671-0bc2-446c-bf5e-5e25032a522e",
-                "target_type": "template_transform",
-            },
-            {
-                "id": "675fa28c-6f94-8008-b5ae-2eba3300b2e6",
-                "source": "623b7671-0bc2-446c-bf5e-5e25032a522e",
-                "source_type": "template_transform",
                 "target": "4a9ed43d-e886-49f7-af9f-9e85d83b27aa",
                 "target_type": "code",
             },
@@ -572,7 +653,58 @@ class AppHandler:
                 "target": "860c8411-37ed-4872-b53f-30afa0290211",
                 "target_type": "end",
             },
-
+            # 并行线路2
+            {
+                "id": "675f9290-5990-8008-ab62-5a0ff8d95edc",
+                "source": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
+                "source_type": "start",
+                "target": "675fca50-1228-8008-82dc-0c714158534c",
+                "target_type": "http_request",
+            },
+            {
+                "id": "675f90b4-7bb8-8008-8b72-ba26ce50951c",
+                "source": "675fca50-1228-8008-82dc-0c714158534c",
+                "source_type": "http_request",
+                "target": "623b7671-0bc2-446c-bf5e-5e25032a522e",
+                "target_type": "template_transform",
+            },
+            {
+                "id": "675f8c7e-e600-8008-885b-6a1271cb4365",
+                "source": "623b7671-0bc2-446c-bf5e-5e25032a522e",
+                "source_type": "template_transform",
+                "target": "860c8411-37ed-4872-b53f-30afa0290211",
+                "target_type": "end",
+            },
+            # 并行线路3
+            {
+                "id": "675f850a-de28-8008-9f27-d508d8337e49",
+                "source": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
+                "source_type": "start",
+                "target": "2f6cf40d-0219-421b-92ff-229fdde15ecb",
+                "target_type": "tool",
+            },
+            {
+                "id": "675f8403-cbf4-8008-9aae-76ecae12c675",
+                "source": "2f6cf40d-0219-421b-92ff-229fdde15ecb",
+                "source_type": "tool",
+                "target": "860c8411-37ed-4872-b53f-30afa0290211",
+                "target_type": "end",
+            },
+            # 并行线路4
+            {
+                "id": "c8732feb-9c6d-4528-8103-ad33af9a162a",
+                "source": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
+                "source_type": "start",
+                "target": "e9fc1f95-1a59-4ba4-a87d-2ad349287234",
+                "target_type": "tool",
+            },
+            {
+                "id": "51e993f4-a832-48bc-8211-59b37acf688c",
+                "source": "e9fc1f95-1a59-4ba4-a87d-2ad349287234",
+                "source_type": "tool",
+                "target": "860c8411-37ed-4872-b53f-30afa0290211",
+                "target_type": "end",
+            },
         ]
 
         workflow = Workflow(workflow_config=WorkflowConfig(

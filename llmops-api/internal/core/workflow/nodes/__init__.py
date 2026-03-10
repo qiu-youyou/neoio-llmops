@@ -9,17 +9,20 @@ from .base_node import BaseNode
 from .code import CodeNode, CodeNodeData
 from .dataset_retrieval import DatasetRetrievalNodeData, DatasetRetrievalNode
 from .end.end_node import EndNode, EndNodeData
+from .http_request import HttpRequestNode, HttpRequestNodeData
 from .llm import LLMNode, LLMNodeData
 from .start.start_node import StartNode, StartNodeData
 from .template_transform import TemplateTransformNode, TemplateTransformNodeData
+from .tool import ToolNode, ToolNodeData
 
 __all__ = [
     "BaseNode",
     "StartNode", "StartNodeData",
     "LLMNode", "LLMNodeData",
-    "EndNode", "EndNodeData",
     "TemplateTransformNode", "TemplateTransformNodeData",
-    "DatasetRetrievalNodeData", "DatasetRetrievalNode",
+    "DatasetRetrievalNode", "DatasetRetrievalNodeData",
+    "HttpRequestNode", "HttpRequestNodeData",
     "CodeNode", "CodeNodeData",
-
+    "ToolNode", "ToolNodeData",
+    "EndNode", "EndNodeData",
 ]
