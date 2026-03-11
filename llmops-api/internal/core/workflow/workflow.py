@@ -51,15 +51,15 @@ class Workflow(BaseTool):
     def _build_args_schema(cls, workflow_config: WorkflowConfig) -> type[BaseModel]:
         fields = {}
         inputs = next(
-            (node.get("inputs", []) for node in workflow_config.nodes if node.get("node_type") == NodeType.START),
+            (node.inputs for node in workflow_config.nodes if node.node_type == NodeType.START),
             []
         )
 
         for input in inputs:
-            field_name = input.get("name")
-            field_type = VARIABLE_TYPE_MAP.get(input.get("type"), str)
-            field_required = input.get("required", True)
-            field_description = input.get("description")
+            field_name = input.name
+            field_type = VARIABLE_TYPE_MAP.get(input.type, str)
+            field_required = input.required
+            field_description = input.description
 
             if field_required:
                 fields[field_name] = (field_type, Field(description=field_description))
@@ -77,15 +77,15 @@ class Workflow(BaseTool):
 
         # 遍历节点
         for node in nodes:
-            node_flag = f"{node.get('node_type')}_{node.get('id')}"
-            if node.get("node_type") in NodeClasses.keys():
-                if node.get("node_type") == NodeType.DATASET_RETRIEVAL:
-                    graph.add_node(node_flag, NodeClasses[node.get("node_type")](
+            node_flag = f"{node.node_type}_{node.id}"
+            if node.node_type in NodeClasses.keys():
+                if node.node_type == NodeType.DATASET_RETRIEVAL:
+                    graph.add_node(node_flag, NodeClasses[node.node_type](
                         flask_app=current_app._get_current_object(),
                         account_id=self._workflow_config.account_id,
                         node_data=node))
                 else:
-                    graph.add_node(node_flag, NodeClasses[node.get("node_type")](node_data=node))
+                    graph.add_node(node_flag, NodeClasses[node.node_type](node_data=node))
             else:
                 raise ValidateErrorException("工作流节点类型不存在！")
 
@@ -94,8 +94,8 @@ class Workflow(BaseTool):
         start_node = ""
         end_node = ""
         for edge in edges:
-            source_node = f"{edge.get('source_type')}_{edge.get('source')}"
-            target_node = f"{edge.get('target_type')}_{edge.get('target')}"
+            source_node = f"{edge.source_type}_{edge.source}"
+            target_node = f"{edge.target_type}_{edge.target}"
 
             if target_node not in parallel_edges:
                 parallel_edges[target_node] = [source_node]
@@ -103,10 +103,10 @@ class Workflow(BaseTool):
                 parallel_edges[target_node].append(source_node)
 
             # 开始节点、结束节点
-            if edge.get('source_type') == NodeType.START:
-                start_node = f"{edge.get('source_type')}_{edge.get('source')}"
-            if edge.get('target_type') == NodeType.END:
-                end_node = f"{edge.get('target_type')}_{edge.get('target')}"
+            if edge.source_type == NodeType.START:
+                start_node = f"{edge.source_type}_{edge.source}"
+            if edge.target_type == NodeType.END:
+                end_node = f"{edge.target_type}_{edge.target}"
 
         graph.set_entry_point(start_node)
         graph.set_finish_point(end_node)
