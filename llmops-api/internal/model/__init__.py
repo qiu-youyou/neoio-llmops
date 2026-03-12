@@ -13,6 +13,7 @@ from .conversation import Conversation, Message, MessageAgentThought
 from .dataset import Dataset, Document, Segment, KeywordTable, DatasetQuery, ProcessRule
 from .end_user import EndUser
 from .upload_file import UploadFile
+from .workflow import Workflow, WorkflowResult
 
 __all__ = [
     "Account", "AccountOAuth",
@@ -22,4 +23,5 @@ __all__ = [
     "UploadFile",
     "Conversation", "Message", "MessageAgentThought",
     "ApiKey", "EndUser",
+    "Workflow", "WorkflowResult",
 ]
