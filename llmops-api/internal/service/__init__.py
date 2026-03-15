@@ -30,6 +30,7 @@ from .retrieval_service import RetrievalService
 from .segment_service import SegmentService
 from .upload_file_service import UploadFileService
 from .vector_database_service import VectorDatabaseService
+from .workflow_service import WorkflowService
 
 __all__ = [
     "JWTService",
@@ -56,5 +57,6 @@ __all__ = [
     "ConversationService",
     "AIService",
     "ApiKeyService",
-    "OpenApiService"
+    "OpenApiService",
+    "WorkflowService",
 ]

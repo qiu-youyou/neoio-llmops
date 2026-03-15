@@ -128,6 +128,7 @@ class WorkflowConfig(BaseModel):
             # 校验每边数据是否为字典
             if not isinstance(edge, dict):
                 raise ValidateErrorException("工作流边数据类型错误")
+            
             # 实例化边数据 通过BaseModel校验
             edge_data = BaseEdgeData(**edge)
             if edge_data.id in edge_data_dict:

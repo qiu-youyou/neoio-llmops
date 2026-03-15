@@ -13,7 +13,7 @@ from injector import inject
 from internal.handler import (
     AppHandler, BuiltinAppHandler, BuiltinToolHandler, ApiToolHandler, UploadFileHandler,
     DatasetHandler, DocumentHandler, SegmentHandler, OAuthHandler, AuthHandler, AccountHandler, AIHandler,
-    ApiKeyHandler, OpenApiHandler)
+    ApiKeyHandler, OpenApiHandler, WorkflowHandler)
 
 
 @inject
@@ -34,6 +34,7 @@ class Router:
     ai_handler: AIHandler
     api_key_handler: ApiKeyHandler
     openapi_handler: OpenApiHandler
+    workflow_handler: WorkflowHandler
 
     def register_router(self, app: Flask):
         """注册路由"""
@@ -182,6 +183,15 @@ class Router:
         bp.add_url_rule("/openapi/api-keys", view_func=self.api_key_handler.get_api_keys_with_page)
         # 开放API会话接口
         openapi_bp.add_url_rule("/openapi/chat", methods=["POST"], view_func=self.openapi_handler.chat)
+
+        # 工作流模块
+        bp.add_url_rule("/workflows", methods=["POST"], view_func=self.workflow_handler.create_workflow)
+        bp.add_url_rule("/workflows/<uuid:workflow_id>/delete", methods=["POST"],
+                        view_func=self.workflow_handler.delete_workflow)
+        bp.add_url_rule("/workflows/<uuid:workflow_id>", methods=["POST"],
+                        view_func=self.workflow_handler.update_workflow)
+        bp.add_url_rule("/workflows/<uuid:workflow_id>", view_func=self.workflow_handler.get_workflow)
+        bp.add_url_rule("/workflows", view_func=self.workflow_handler.get_workflows_with_page)
 
         # 在应用上注册蓝图
         app.register_blueprint(bp)
