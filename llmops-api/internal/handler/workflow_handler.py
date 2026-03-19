@@ -17,7 +17,7 @@ from internal.schema.workflow_schema import CreateWorkflowReq, UpdateWorkflowReq
     GetWorkflowsWithPageReq, GetWorkflowsWithPageResp
 from internal.service import WorkflowService
 from pkg.paginator import PageModel
-from pkg.response import validate_error_json, success_json, success_message
+from pkg.response import validate_error_json, success_json, success_message, compact_generate_response
 
 
 @inject
@@ -66,3 +66,25 @@ class WorkflowHandler:
         workflows, paginator = self.workflow_service.get_workflows_with_page(req, current_user)
         resp = GetWorkflowsWithPageResp(many=True)
         return success_json(PageModel(list=resp.dump(workflows), paginator=paginator))
+
+    @login_required
+    def update_draft_graph(self, workflow_id: UUID):
+        """更新工作流草稿配置"""
+        # 提取请求的JSON数据
+        draft_graph_dict = request.get_json(force=True, silent=True) or {"nodes": [], "edges": []}
+        self.workflow_service.update_draft_graph(workflow_id, draft_graph_dict, current_user)
+        return success_message("更新工作流草稿成功")
+
+    @login_required
+    def debug_workflow(self, workflow_id: UUID):
+        """调试指定的工作流"""
+        # 提取用户传递的输入变量信息
+        inputs = request.get_json(force=True, silent=True) or {}
+        response = self.workflow_service.debug_workflow(workflow_id, inputs, current_user)
+        return compact_generate_response(response)
+
+    @login_required
+    def get_draft_graph(self, workflow_id: UUID):
+        """获取工作流草稿配置信息"""
+        draft_graph = self.workflow_service.get_draft_graph(workflow_id, current_user)
+        return success_json(draft_graph)

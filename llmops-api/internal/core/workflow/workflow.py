@@ -5,9 +5,11 @@
 @Time   :   2026/3/2
 @Author :   s.qiu@foxmail.com
 """
-from typing import Any, Optional
+from typing import Any, Optional, Iterator
 
 from flask import current_app
+from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import BaseTool
 from langgraph.graph.state import CompiledStateGraph, StateGraph
 from pydantic import PrivateAttr, BaseModel, Field, create_model
@@ -125,3 +127,12 @@ class Workflow(BaseTool):
     def _run(self, *args: Any, **kwargs: Any) -> Any:
         """工作流基础 Run 方法"""
         return self._workflow.invoke({"inputs": kwargs})
+
+    def stream(
+            self,
+            input: Input,
+            config: Optional[RunnableConfig] = None,
+            **kwargs: Optional[Any],
+    ) -> Iterator[Output]:
+        """工作流流式输出每个节点对应的结果"""
+        return self._workflow.stream({"inputs": input})
