@@ -116,7 +116,6 @@ class Workflow(BaseTool):
         # 遍历合并边
         for target_node, source_nodes in parallel_edges.items():
             graph.add_edge(source_nodes, target_node)
-
         workflow = graph.compile()
         # image_data = workflow.get_graph().draw_mermaid_png()
         # with open("workflow.png", "wb") as f:

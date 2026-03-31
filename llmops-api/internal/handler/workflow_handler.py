@@ -72,8 +72,15 @@ class WorkflowHandler:
         """更新工作流草稿配置"""
         # 提取请求的JSON数据
         draft_graph_dict = request.get_json(force=True, silent=True) or {"nodes": [], "edges": []}
+        print(draft_graph_dict)
         self.workflow_service.update_draft_graph(workflow_id, draft_graph_dict, current_user)
         return success_message("更新工作流草稿成功")
+
+    @login_required
+    def get_draft_graph(self, workflow_id: UUID):
+        """获取工作流草稿配置信息"""
+        draft_graph = self.workflow_service.get_draft_graph(workflow_id, current_user)
+        return success_json(draft_graph)
 
     @login_required
     def debug_workflow(self, workflow_id: UUID):
@@ -84,7 +91,13 @@ class WorkflowHandler:
         return compact_generate_response(response)
 
     @login_required
-    def get_draft_graph(self, workflow_id: UUID):
-        """获取工作流草稿配置信息"""
-        draft_graph = self.workflow_service.get_draft_graph(workflow_id, current_user)
-        return success_json(draft_graph)
+    def publish_workflow(self, workflow_id: UUID):
+        """发布指定工作流"""
+        self.workflow_service.publish_workflow(workflow_id, current_user)
+        return success_message("工作流发布成功")
+
+    @login_required
+    def cancel_publish_workflow(self, workflow_id: UUID, ):
+        """取消发布指定工作流"""
+        self.workflow_service.cancel_publish_workflow(workflow_id, current_user)
+        return success_message("工作流取消发布成功")

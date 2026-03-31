@@ -5,7 +5,9 @@
 @Time   :   2026/3/15 20:50
 @Author :   s.qiu@foxmail.com
 """
-
+import json
+import time
+import uuid
 from dataclasses import dataclass
 from typing import Any, Generator
 from uuid import UUID
@@ -18,6 +20,7 @@ from internal.core.tools.builtin_tools.providers import BuiltinProviderManager
 from internal.core.workflow import Workflow as WorkflowTool
 from internal.core.workflow.entities.edge_entity import BaseEdgeData
 from internal.core.workflow.entities.node_entity import NodeType, BaseNodeData
+from internal.core.workflow.entities.workflow_entity import WorkflowConfig
 from internal.core.workflow.nodes import (
     CodeNodeData,
     DatasetRetrievalNodeData,
@@ -29,15 +32,13 @@ from internal.core.workflow.nodes import (
     ToolNodeData,
 )
 from internal.entity.workflow_entity import DEFAULT_WORKFLOW_CONFIG, WorkflowStatus, WorkflowResultStatus
-from internal.exception import ValidateErrorException, NotFoundException, ForbiddenException
+from internal.exception import ValidateErrorException, NotFoundException, ForbiddenException, FailException
 from internal.lib.helper import convert_model_to_dict
 from internal.model import Workflow, Account, Dataset, ApiTool, WorkflowResult
 from internal.schema.workflow_schema import CreateWorkflowReq, GetWorkflowsWithPageReq
 from pkg.paginator import Paginator
-from pkg.response import success_message
 from pkg.sqlalchemy import SQLAlchemy
 from .base_service import BaseService
-from ..core.workflow.entities.workflow_entity import WorkflowConfig
 
 
 @inject
@@ -82,14 +83,6 @@ class WorkflowService(BaseService):
     def update_workflow(self, workflow_id: UUID, account: Account, **kwargs) -> Workflow:
         """更新工作流"""
         workflow = self.get_workflow(workflow_id, account)
-
-        check_workflow = self.db.session.query(Workflow).filter(
-            Workflow.tool_call_name == kwargs.get("tool_call_name", "").strip(),
-            Workflow.account_id == account.id,
-            Workflow.id == workflow_id,
-        ).one_or_none()
-        if check_workflow:
-            raise ValidateErrorException("当前账号下已经存在同名的工作流")
         workflow = self.update(workflow, **kwargs)
         return workflow
 
@@ -114,7 +107,7 @@ class WorkflowService(BaseService):
         validate_draft_graph = self._validate_graph(draft_graph, account)
         # 更新工作流草稿配置 每次修改都需要将 is_debug_passed 重置为 False
         self.update(workflow, **{"draft_graph": validate_draft_graph, "is_debug_passed": False})
-        return success_message("更新工作流配置成功")
+        return workflow
 
     def get_draft_graph(self, workflow_id: UUID, account: Account) -> dict[str, Any]:
         """获取工作流草稿配置信息"""
@@ -204,7 +197,7 @@ class WorkflowService(BaseService):
                 }
         return validate_draft_graph
 
-    def debug_workflow(self, workflow_id: UUID, account: Account) -> Generator:
+    def debug_workflow(self, workflow_id: UUID, inputs: dict[str, Any], account: Account) -> Generator:
         """调试工作流配置 流式事件输出"""
         workflow = self.get_workflow(workflow_id, account)
         # 创建工作流工具
@@ -218,26 +211,95 @@ class WorkflowService(BaseService):
 
         def handle_stream() -> Generator:
             """流式处理节点运行结果"""
-            node_result = []
+            node_results = []
+
+            workflow_in_session = self.get_workflow(workflow_id, account)
+
             # 添加数据库工作流运行结果记录
             workflow_result = self.create(WorkflowResult, **{
                 "app_id": None,
                 "account_id": account.id,
-                "workflow_id": workflow.id,
-                "graph": workflow.draft_graph,
+                "workflow_id": workflow_in_session.id,
+                "graph": workflow_in_session.draft_graph,
                 "state": [],
                 "latency": 0,
                 "status": WorkflowResultStatus.RUNNING,
             })
 
-        return handle_stream
+            # 调用stream获取工具嘻嘻
+            start_at = time.perf_counter()
+            try:
+                for chunk in workflow_tool.stream(inputs):
+                    # chunk的格式为:{"node_name": WorkflowState}，所以需要取出节点响应结构的第1个key
+                    first_key = next(iter(chunk))
+
+                    # 取出各个节点的运行结果
+                    node_result = chunk[first_key]["node_results"][0]
+                    node_result_dict = convert_model_to_dict(node_result)
+                    node_results.append(node_result_dict)
+
+                    # 组装响应数据并流式事件输出
+                    data = {"id": str(uuid.uuid4()), **node_result_dict}
+                    yield f"event: workflow\ndata: {json.dumps(data)}\n\n"
+
+                # 流式输出完毕后，将结果存储到数据库中
+                self.update(workflow_result, **{
+                    "status": WorkflowResultStatus.SUCCEEDED,
+                    "latency": (time.perf_counter() - start_at),
+                    "state": node_results
+                })
+                self.update(workflow_in_session, **{"is_debug_passed": True})
+            except Exception:
+                self.update(workflow_result, **{
+                    "status": WorkflowResultStatus.FAILED,
+                    "latency": (time.perf_counter() - start_at),
+                    "state": node_results
+                })
+
+        return handle_stream()
+
+    def publish_workflow(self, workflow_id: UUID, account: Account) -> Workflow:
+        """发布指定的工作流"""
+        workflow = self.get_workflow(workflow_id, account)
+        if workflow.is_debug_passed is False:
+            raise FailException("该工作流未调试通过，请调试通过后发布")
+        if workflow.status == WorkflowStatus.PUBLISHED:
+            raise FailException("该工作流已发布")
+        # 使用 WorkflowConfig 二次校验
+        try:
+            WorkflowConfig(
+                account_id=account.id,
+                name=workflow.tool_call_name,
+                description=workflow.description,
+                nodes=workflow.draft_graph.get("nodes", []),
+                edges=workflow.draft_graph.get("edges", []),
+            )
+        except Exception:
+            self.update(workflow, **{"is_debug_passed": False})
+            raise ValidateErrorException("工作流配置校验失败")
+
+        self.update(workflow, **{
+            "graph": workflow.draft_graph,
+            "status": WorkflowStatus.PUBLISHED,
+            "is_debug_passed": False,
+        })
+
+        return workflow
+
+    def cancel_publish_workflow(self, workflow_id: UUID, account: Account) -> Workflow:
+        """取消发布指定的工作流"""
+        workflow = self.get_workflow(workflow_id, account)
+        if workflow.status != WorkflowStatus.PUBLISHED:
+            raise FailException("该工作流未发布")
+
+        self.update(workflow, **{"graph": {}, "status": WorkflowStatus.DRAFT, "is_debug_passed": False})
+        return workflow
 
     def _validate_graph(self, graph: dict[str, Any], account: Account) -> dict[str, Any]:
         """校验传递的graph信息，涵盖nodes和edges对应的数据，该函数使用相对宽松的校验方式，并且因为是草稿，不需要校验节点与边的关系"""
         # 提取nodes和edges数据
         nodes = graph.get("nodes", [])
         edges = graph.get("edges", [])
-
         # 构建节点类型与节点数据类映射
         node_data_classes = {
             NodeType.CODE: CodeNodeData,

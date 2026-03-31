@@ -696,35 +696,35 @@ class AppHandler:
                 "target_type": "end",
             },
             # 并行线路3
-            # {
-            #     "id": "675f850a-de28-8008-9f27-d508d8337e49",
-            #     "source": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
-            #     "source_type": "start",
-            #     "target": "2f6cf40d-0219-421b-92ff-229fdde15ecb",
-            #     "target_type": "tool",
-            # },
-            # {
-            #     "id": "675f8403-cbf4-8008-9aae-76ecae12c675",
-            #     "source": "2f6cf40d-0219-421b-92ff-229fdde15ecb",
-            #     "source_type": "tool",
-            #     "target": "860c8411-37ed-4872-b53f-30afa0290211",
-            #     "target_type": "end",
-            # },
-            # # 并行线路4
-            # {
-            #     "id": "c8732feb-9c6d-4528-8103-ad33af9a162a",
-            #     "source": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
-            #     "source_type": "start",
-            #     "target": "e9fc1f95-1a59-4ba4-a87d-2ad349287234",
-            #     "target_type": "tool",
-            # },
-            # {
-            #     "id": "51e993f4-a832-48bc-8211-59b37acf688c",
-            #     "source": "e9fc1f95-1a59-4ba4-a87d-2ad349287234",
-            #     "source_type": "tool",
-            #     "target": "860c8411-37ed-4872-b53f-30afa0290211",
-            #     "target_type": "end",
-            # },
+            {
+                "id": "675f850a-de28-8008-9f27-d508d8337e49",
+                "source": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
+                "source_type": "start",
+                "target": "2f6cf40d-0219-421b-92ff-229fdde15ecb",
+                "target_type": "tool",
+            },
+            {
+                "id": "675f8403-cbf4-8008-9aae-76ecae12c675",
+                "source": "2f6cf40d-0219-421b-92ff-229fdde15ecb",
+                "source_type": "tool",
+                "target": "860c8411-37ed-4872-b53f-30afa0290211",
+                "target_type": "end",
+            },
+            # 并行线路4
+            {
+                "id": "c8732feb-9c6d-4528-8103-ad33af9a162a",
+                "source": "18d938c4-ecd7-4a6b-9403-3625224b96cc",
+                "source_type": "start",
+                "target": "e9fc1f95-1a59-4ba4-a87d-2ad349287234",
+                "target_type": "tool",
+            },
+            {
+                "id": "51e993f4-a832-48bc-8211-59b37acf688c",
+                "source": "e9fc1f95-1a59-4ba4-a87d-2ad349287234",
+                "source_type": "tool",
+                "target": "860c8411-37ed-4872-b53f-30afa0290211",
+                "target_type": "end",
+            },
         ]
 
         workflow = Workflow(workflow_config=WorkflowConfig(

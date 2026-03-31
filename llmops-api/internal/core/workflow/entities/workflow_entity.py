@@ -52,6 +52,7 @@ class WorkflowConfig(BaseModel):
         name = values.get("name", None)
         if not name or not re.match(WORKFLOW_CONFIG_NAME_PATTERN, name):
             raise ValidateErrorException("工作流名称仅支持字母、数字、下划线，且以字母、下划线为开头")
+
         # 校验工作流描述信息 文本需要传递到LLM 有长度显示
         description = values.get("description", None)
         if not description or len(description) > WORKFLOW_CONFIG_DESCRIPTION_MAX_LENGTH:
@@ -157,17 +158,19 @@ class WorkflowConfig(BaseModel):
         # 构建邻接表、逆邻接表、入度以及出度
         adj_list = cls._build_adj_list(edge_data_dict.values())
         reverse_adj_list = cls._build_reverse_adj_list(edge_data_dict.values())
-        in_degree, out_degree = cls._build_in_degree_and_out_degree(edge_data_dict.values())
+        in_degree, out_degree = cls._build_degrees(edge_data_dict.values())
 
         # 从边的关系中校验是否有唯一的开始/结束节点
         # 入度为0就是开始节点 出度为0就是结束节点
         start_nodes = [node_data for node_data in node_data_dict.values() if in_degree[node_data.id] == 0]
         end_nodes = [node_data for node_data in node_data_dict.values() if out_degree[node_data.id] == 0]
-        if (len(start_nodes) != 1
+        if (
+                len(start_nodes) != 1
                 or len(end_nodes) != 1
                 or start_nodes[0].node_type != NodeType.START
-                or end_nodes[0].node_type != NodeType.END):
-            raise ValidateErrorException("工作流中有切只有一个开始/结束节点")
+                or end_nodes[0].node_type != NodeType.END
+        ):
+            raise ValidateErrorException("工作流中有且只有一个开始/结束节点")
 
         # 校验图的连通性 无孤立节点、无循环边结构
         start_node_data = start_nodes[0]
@@ -290,8 +293,8 @@ class WorkflowConfig(BaseModel):
     @classmethod
     def _build_degrees(cls, edges: list[BaseEdgeData]) -> tuple[defaultdict[Any, int], defaultdict[Any, int]]:
         """计算每个节点的 in_degress&out_degrees 入度和出度"""
-        in_degree = defaultdict(list)
-        out_degree = defaultdict(list)
+        in_degree = defaultdict(int)
+        out_degree = defaultdict(int)
         for edge in edges:
             in_degree[edge.target] += 1
             out_degree[edge.source] += 1

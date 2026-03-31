@@ -35,7 +35,6 @@ class StartNode(BaseNode):
         # 提取并校验输入中的数据
         outputs_dict = {}
         for input in inputs:
-
             input_value = state.inputs.get(input.name, None)
             if input_value is None:
                 if input.required:
